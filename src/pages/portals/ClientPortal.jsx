@@ -1,0 +1,24 @@
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
+
+export default function ClientPortal() {
+  return (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-text">My Dashboard</h2>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card>
+          <CardHeader><CardTitle>Active Projects</CardTitle></CardHeader>
+          <CardContent><p className="text-2xl font-bold text-text">2</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>Pending Invoices</CardTitle></CardHeader>
+          <CardContent><p className="text-2xl font-bold text-text">1</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader><CardTitle>Open Tickets</CardTitle></CardHeader>
+          <CardContent><p className="text-2xl font-bold text-text">0</p></CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

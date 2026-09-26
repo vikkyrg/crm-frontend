@@ -1,0 +1,43 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+  :root {
+    /* Light Mode Tokens */
+    --color-bg: #f8fafc;
+    --color-surface: #ffffff;
+    --color-primary: #0ea5e9;
+    --color-primary-hover: #0284c7;
+    --color-secondary: #8b5cf6;
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #3b82f6;
+    
+    --color-text: #0f172a;
+    --color-text-muted: #64748b;
+    --color-border: #e2e8f0;
+  }
+
+  .dark {
+    /* Dark Mode Tokens */
+    --color-bg: #080b12;
+    --color-surface: #111827;
+    --color-primary: #00d9ff;
+    --color-primary-hover: #0ea5e9;
+    --color-secondary: #7c3aed;
+    --color-success: #22c55e;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #3b82f6;
+    
+    --color-text: #f8fafc;
+    --color-text-muted: #94a3b8;
+    --color-border: #1e293b;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+}
