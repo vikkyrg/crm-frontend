@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Eye, X, SendCheck, CheckCircle, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, X, Send, CheckCircle, FileText } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { toast } from 'sonner';
@@ -164,7 +164,7 @@ export default function Quotations() {
 
           {row.approvalStatus !== 'Approved' && row.approvalStatus !== 'Pending Approval' && (
             <DropdownItem 
-              icon={SendCheck} 
+              icon={Send} 
               onClick={() => submitApprovalMutation.mutate(row._id)}
             >
               Submit for Approval
