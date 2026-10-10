@@ -7,27 +7,21 @@ import {
   Globe, 
   Headset, 
   Repeat, 
-  Wallet, 
-  UserCircle, 
   Settings,
   Target,
   FileText,
   FolderKanban,
-  CheckSquare,
   ShieldCheck,
-  Server,
-  Cloud,
-  FileArchive,
   Wrench,
-  DollarSign,
   TrendingUp,
   Receipt,
   Users2,
   CalendarDays,
   Bot,
-  Bell,
-  Lock,
-  PieChart
+  PieChart,
+  UserCircle,
+  Eye,
+  CheckSquare
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -36,6 +30,7 @@ const navSections = [
     title: 'MANAGEMENT',
     items: [
       { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+      { name: 'CEO Morning View', path: '/dashboard/ceo-view', icon: Eye },
       { name: 'Action Center', path: '/action-center', icon: Target },
       { name: 'Reports', path: '/reports', icon: PieChart },
       { name: 'Calendar', path: '/calendar', icon: CalendarDays },
@@ -60,19 +55,19 @@ const navSections = [
   {
     title: 'DIGITAL ASSETS',
     items: [
-      { name: 'Websites', path: '/digital-assets/websites', icon: Globe },
+      { name: 'Websites & Apps', path: '/digital-assets/websites', icon: Globe },
     ],
   },
   {
     title: 'SUPPORT',
     items: [
-      { name: 'Tickets', path: '/support/tickets', icon: Headset },
+      { name: 'Support Tickets', path: '/support/tickets', icon: Headset },
     ],
   },
   {
     title: 'RECURRING BUSINESS',
     items: [
-      { name: 'AMC / Renewals', path: '/recurring/amc', icon: Wrench },
+      { name: 'AMC & Renewals', path: '/recurring/amc', icon: Wrench },
     ],
   },
   {
@@ -86,13 +81,13 @@ const navSections = [
     title: 'PEOPLE & COMPANY',
     items: [
       { name: 'Employees', path: '/hr/employees', icon: Users2 },
-      { name: 'Documents', path: '/documents', icon: FileArchive },
     ],
   },
   {
     title: 'AUTOMATION',
     items: [
       { name: 'Workflows', path: '/automation/workflows', icon: Bot },
+      { name: 'Approvals', path: '/automation/approvals', icon: CheckSquare },
     ],
   },
   {
@@ -110,7 +105,7 @@ export default function Sidebar() {
       <div className="h-16 flex items-center px-6 border-b border-border">
         <h1 className="text-xl font-bold tracking-tight text-primary">
           INNOMATRICS
-          <span className="block text-xs font-normal text-text-muted">TECHNOLOGIES</span>
+          <span className="block text-xs font-normal text-text-muted">CRM / ERP PLATFORM</span>
         </h1>
       </div>
 
@@ -129,11 +124,11 @@ export default function Sidebar() {
                   className={({ isActive }) => cn(
                     "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
                     isActive 
-                      ? "bg-primary/10 text-primary" 
+                      ? "bg-primary/10 text-primary font-semibold" 
                       : "text-text-muted hover:bg-surface hover:text-text"
                   )}
                 >
-                  <item.icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                  <item.icon className="mr-3 h-4 w-4 flex-shrink-0" />
                   {item.name}
                 </NavLink>
               ))}
@@ -145,10 +140,10 @@ export default function Sidebar() {
       {/* User Info / Bottom */}
       <div className="p-4 border-t border-border">
         <div className="flex items-center text-sm font-medium text-text">
-          <UserCircle className="mr-3 h-8 w-8 text-text-muted" />
-          <div className="flex flex-col">
-            <span>Admin User</span>
-            <span className="text-xs text-text-muted">admin@innomatrics.com</span>
+          <UserCircle className="mr-3 h-8 w-8 text-primary" />
+          <div className="flex flex-col overflow-hidden">
+            <span className="truncate">Super Admin</span>
+            <span className="text-xs text-text-muted truncate">admin@innomatrics.com</span>
           </div>
         </div>
       </div>

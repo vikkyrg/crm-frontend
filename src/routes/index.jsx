@@ -11,12 +11,14 @@ import ProtectedRoute from './ProtectedRoute';
 // Pages
 import Login from '../pages/auth/Login';
 import ManagementDashboard from '../pages/dashboard/ManagementDashboard';
+import CeoMorningDashboard from '../pages/dashboard/CeoMorningDashboard';
 import Leads from '../pages/crm/Leads';
 import FollowUps from '../pages/crm/FollowUps';
 import Clients from '../pages/crm/Clients';
 import ClientDetail from '../pages/crm/Client360';
 import Quotations from '../pages/crm/Quotations';
 import Projects from '../pages/operations/Projects';
+import ProjectDetail from '../pages/operations/Project360';
 import Websites from '../pages/assets/Websites';
 import FinanceDashboard from '../pages/finance/FinanceDashboard';
 import Invoices from '../pages/finance/Invoices';
@@ -29,6 +31,7 @@ import AMC from '../pages/recurring/AMC';
 import Documents from '../pages/documents/Documents';
 import Reports from '../pages/reports/Reports';
 import Workflows from '../pages/automation/Workflows';
+import Approvals from '../pages/automation/Approvals';
 import ActionCenter from '../pages/dashboard/ActionCenter';
 import Calendar from '../pages/calendar/Calendar';
 
@@ -47,13 +50,14 @@ const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <ProtectedRoute allowedRoles={['Admin', 'Manager', 'CEO']} />,
+    element: <ProtectedRoute allowedRoles={['Admin', 'Manager', 'CEO', 'Super Admin']} />,
     children: [
       {
         path: '/',
         element: <AppLayout />,
         children: [
           { path: 'dashboard', element: <ManagementDashboard /> },
+          { path: 'dashboard/ceo-view', element: <CeoMorningDashboard /> },
           { path: 'action-center', element: <ActionCenter /> },
           { path: 'calendar', element: <Calendar /> },
           { path: 'crm/leads', element: <Leads /> },
@@ -63,6 +67,7 @@ const router = createBrowserRouter([
           { path: 'sales/quotations', element: <Quotations /> },
           { path: 'sales/contracts', element: <Contracts /> },
           { path: 'projects', element: <Projects /> },
+          { path: 'projects/:id', element: <ProjectDetail /> },
           { path: 'digital-assets/websites', element: <Websites /> },
           { path: 'recurring/amc', element: <AMC /> },
           { path: 'finance', element: <FinanceDashboard /> },
@@ -72,6 +77,7 @@ const router = createBrowserRouter([
           { path: 'documents', element: <Documents /> },
           { path: 'reports', element: <Reports /> },
           { path: 'automation/workflows', element: <Workflows /> },
+          { path: 'automation/approvals', element: <Approvals /> },
           { path: 'settings', element: <Settings /> },
         ]
       }

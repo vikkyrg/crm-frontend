@@ -1,55 +1,69 @@
 import React from 'react';
-import { AlertCircle, Clock, ShieldAlert } from 'lucide-react';
+import { AlertCircle, Clock, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
+import { useQuery } from '@tanstack/react-query';
+import api from '../../services/api';
+import { TableSkeleton } from '../../components/feedback/LoadingSkeleton';
+import ErrorState from '../../components/feedback/ErrorState';
 
 export default function ActionCenter() {
+  const { data: actions = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ['actionCenterItems'],
+    queryFn: async () => {
+      const res = await api.get('/dashboard/action-center');
+      return res.data || [];
+    }
+  });
+
+  if (isLoading) return <div className="p-6"><TableSkeleton /></div>;
+  if (isError) return <div className="p-6"><ErrorState title="Failed to load Action Center" onRetry={refetch} /></div>;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-text">Action Center</h1>
-        <p className="text-sm text-text-muted mt-1">Centralized hub for all pending business actions requiring your attention.</p>
+        <h1 className="text-2xl font-bold tracking-tight text-text flex items-center">
+          <AlertCircle className="mr-3 h-7 w-7 text-primary" /> Company Action Center
+        </h1>
+        <p className="text-sm text-text-muted mt-1">
+          Centralized company-wide hub for all pending follow-ups, payment collections, approvals, and deadline actions.
+        </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="border-danger/50">
-          <CardHeader className="bg-danger/5 pb-4">
-            <CardTitle className="text-danger flex items-center"><AlertCircle className="mr-2 h-5 w-5" /> Critical</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-             <div className="border-l-2 border-danger pl-3">
-               <p className="text-sm font-medium">Domain stark.com expiring tomorrow</p>
-               <p className="text-xs text-text-muted">Requires immediate renewal.</p>
-             </div>
-             <div className="border-l-2 border-danger pl-3">
-               <p className="text-sm font-medium">Invoice #INV-2023-003 Overdue by 30 days</p>
-               <p className="text-xs text-text-muted">Client: Oscorp</p>
-             </div>
-          </CardContent>
-        </Card>
+      <div className="space-y-3">
+        {actions.length === 0 && (
+          <div className="p-8 text-center bg-surface border border-border rounded-xl">
+            <CheckCircle2 className="h-10 w-10 text-success mx-auto mb-2" />
+            <h3 className="text-base font-bold text-text">All Clear!</h3>
+            <p className="text-xs text-text-muted mt-1">There are no pending action items in the company queue today.</p>
+          </div>
+        )}
 
-        <Card className="border-warning/50">
-          <CardHeader className="bg-warning/5 pb-4">
-            <CardTitle className="text-warning flex items-center"><Clock className="mr-2 h-5 w-5" /> Due Soon</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-             <div className="border-l-2 border-warning pl-3">
-               <p className="text-sm font-medium">SLA Risk: Ticket #TKT-0102</p>
-               <p className="text-xs text-text-muted">Due in 2 hours.</p>
-             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="border-info/50">
-          <CardHeader className="bg-info/5 pb-4">
-            <CardTitle className="text-info flex items-center"><ShieldAlert className="mr-2 h-5 w-5" /> Approvals</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-4">
-             <div className="border-l-2 border-info pl-3">
-               <p className="text-sm font-medium">Quotation #QUO-004 needs approval</p>
-               <p className="text-xs text-text-muted">Value: $150,000</p>
-             </div>
-          </CardContent>
-        </Card>
+        {actions.map((item, idx) => (
+          <div 
+            key={idx}
+            className="flex items-center justify-between p-4 bg-surface border border-border rounded-lg shadow-sm hover:border-primary/50 transition-colors"
+          >
+            <div className="flex items-start space-x-3">
+              <div className={`p-2 rounded-lg ${item.priority === 'Urgent' ? 'bg-danger/10 text-danger' : 'bg-primary/10 text-primary'}`}>
+                {item.priority === 'Urgent' ? <AlertCircle className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+              </div>
+              <div>
+                <p className="text-sm font-bold text-text">{item.title}</p>
+                <div className="flex items-center space-x-3 text-xs text-text-muted mt-1">
+                  <span className="font-semibold text-primary">{item.type}</span>
+                  <span>•</span>
+                  <span>Due: {new Date(item.dueDate).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+
+            <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+              item.priority === 'Urgent' ? 'bg-danger/20 text-danger' : 'bg-primary/20 text-primary'
+            }`}>
+              {item.priority}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
