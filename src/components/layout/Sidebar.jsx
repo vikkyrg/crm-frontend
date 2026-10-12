@@ -21,7 +21,8 @@ import {
   PieChart,
   UserCircle,
   Eye,
-  CheckSquare
+  CheckSquare,
+  DollarSign
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -50,12 +51,14 @@ const navSections = [
     title: 'OPERATIONS',
     items: [
       { name: 'Projects', path: '/projects', icon: FolderKanban },
+      { name: 'Tasks', path: '/tasks', icon: CheckSquare },
     ],
   },
   {
     title: 'DIGITAL ASSETS',
     items: [
       { name: 'Websites & Apps', path: '/digital-assets/websites', icon: Globe },
+      { name: 'Domains & SSL', path: '/domains', icon: Globe },
     ],
   },
   {
@@ -75,12 +78,16 @@ const navSections = [
     items: [
       { name: 'Finance Hub', path: '/finance', icon: TrendingUp },
       { name: 'Invoices', path: '/finance/invoices', icon: Receipt },
+      { name: 'Payments', path: '/finance/payments', icon: DollarSign },
+      { name: 'Expenses', path: '/finance/expenses', icon: Receipt },
     ],
   },
   {
     title: 'PEOPLE & COMPANY',
     items: [
       { name: 'Employees', path: '/hr/employees', icon: Users2 },
+      { name: 'Attendance', path: '/hr/attendance', icon: CalendarDays },
+      { name: 'Leave', path: '/hr/leave', icon: FileText },
     ],
   },
   {

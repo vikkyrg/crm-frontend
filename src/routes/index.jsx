@@ -19,11 +19,18 @@ import ClientDetail from '../pages/crm/Client360';
 import Quotations from '../pages/crm/Quotations';
 import Projects from '../pages/operations/Projects';
 import ProjectDetail from '../pages/operations/Project360';
+import Tasks from '../pages/operations/Tasks';
 import Websites from '../pages/assets/Websites';
+import Domains from '../pages/assets/Domains';
 import FinanceDashboard from '../pages/finance/FinanceDashboard';
 import Invoices from '../pages/finance/Invoices';
+import Payments from '../pages/finance/Payments';
+import Expenses from '../pages/finance/Expenses';
 import Tickets from '../pages/support/Tickets';
 import Employees from '../pages/hr/Employees';
+import Attendance from '../pages/hr/Attendance';
+import Leave from '../pages/hr/Leave';
+import Payroll from '../pages/hr/Payroll';
 import Settings from '../pages/settings/Settings';
 
 import Contracts from '../pages/sales/Contracts';
@@ -68,12 +75,20 @@ const router = createBrowserRouter([
           { path: 'sales/contracts', element: <Contracts /> },
           { path: 'projects', element: <Projects /> },
           { path: 'projects/:id', element: <ProjectDetail /> },
+          { path: 'tasks', element: <Tasks /> },
           { path: 'digital-assets/websites', element: <Websites /> },
+          { path: 'domains', element: <Domains /> },
+          { path: 'digital-assets/domains', element: <Domains /> },
           { path: 'recurring/amc', element: <AMC /> },
           { path: 'finance', element: <FinanceDashboard /> },
           { path: 'finance/invoices', element: <Invoices /> },
+          { path: 'finance/payments', element: <Payments /> },
+          { path: 'finance/expenses', element: <Expenses /> },
           { path: 'support/tickets', element: <Tickets /> },
           { path: 'hr/employees', element: <Employees /> },
+          { path: 'hr/attendance', element: <Attendance /> },
+          { path: 'hr/leave', element: <Leave /> },
+          { path: 'hr/payroll', element: <Payroll /> },
           { path: 'documents', element: <Documents /> },
           { path: 'reports', element: <Reports /> },
           { path: 'automation/workflows', element: <Workflows /> },

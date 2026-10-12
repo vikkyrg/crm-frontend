@@ -51,13 +51,13 @@ export default function CeoMorningDashboard() {
             <CardContent className="space-y-2">
               {needs.overdueInvoices?.length === 0 && <p className="text-xs text-text-muted">No overdue invoices!</p>}
               {needs.overdueInvoices?.map((inv) => (
-                <div key={inv._id} className="flex justify-between items-center text-xs p-2 bg-surface rounded border border-border">
+                <Link to="/finance/invoices" key={inv._id} className="flex justify-between items-center text-xs p-2.5 bg-surface rounded-lg border border-border hover:border-danger transition-colors">
                   <div>
                     <p className="font-semibold text-text">{inv.clientId?.companyName || 'Client'}</p>
                     <p className="text-text-muted">#{inv.invoiceNumber}</p>
                   </div>
-                  <span className="font-bold text-danger">₹{inv.balance}</span>
-                </div>
+                  <span className="font-bold text-danger font-mono">₹{inv.balance?.toLocaleString()}</span>
+                </Link>
               ))}
             </CardContent>
           </Card>
@@ -129,10 +129,10 @@ export default function CeoMorningDashboard() {
             <CardContent className="space-y-2">
               {needs.delayedProjects?.length === 0 && <p className="text-xs text-text-muted">All projects on schedule!</p>}
               {needs.delayedProjects?.map((p) => (
-                <div key={p._id} className="flex justify-between items-center text-xs p-2 bg-surface rounded border border-border">
+                <Link to={`/projects/${p._id}`} key={p._id} className="flex justify-between items-center text-xs p-2.5 bg-surface rounded-lg border border-border hover:border-primary transition-colors">
                   <span className="font-semibold text-text">{p.projectName}</span>
                   <span className="text-xs text-primary font-medium">{p.clientId?.companyName}</span>
-                </div>
+                </Link>
               ))}
             </CardContent>
           </Card>
@@ -148,13 +148,13 @@ export default function CeoMorningDashboard() {
             <CardContent className="space-y-2">
               {needs.pendingApprovals?.length === 0 && <p className="text-xs text-text-muted">No pending approvals.</p>}
               {needs.pendingApprovals?.map((a) => (
-                <div key={a._id} className="flex justify-between items-center text-xs p-2 bg-surface rounded border border-border">
+                <Link to="/automation/approvals" key={a._id} className="flex justify-between items-center text-xs p-2.5 bg-surface rounded-lg border border-border hover:border-primary transition-colors">
                   <div>
-                    <p className="font-semibold text-text">{a.module}</p>
+                    <p className="font-semibold text-text">{a.module} Approval</p>
                     <p className="text-text-muted">By: {a.requestedBy?.name || 'Staff'}</p>
                   </div>
-                  <span className="font-bold text-primary">₹{a.amount || 0}</span>
-                </div>
+                  <span className="font-bold text-primary font-mono">₹{(a.amount || 0).toLocaleString()}</span>
+                </Link>
               ))}
             </CardContent>
           </Card>
@@ -170,10 +170,10 @@ export default function CeoMorningDashboard() {
             <CardContent className="space-y-2">
               {needs.urgentTickets?.length === 0 && <p className="text-xs text-text-muted">No urgent tickets.</p>}
               {needs.urgentTickets?.map((t) => (
-                <div key={t._id} className="flex justify-between items-center text-xs p-2 bg-surface rounded border border-border">
-                  <span className="font-semibold text-text">{t.subject}</span>
-                  <span className="text-xs text-danger font-medium">{t.status}</span>
-                </div>
+                <Link to="/support/tickets" key={t._id} className="flex justify-between items-center text-xs p-2.5 bg-surface rounded-lg border border-border hover:border-danger transition-colors">
+                  <span className="font-semibold text-text truncate max-w-[180px]">{t.subject}</span>
+                  <span className="text-xs text-danger font-bold">{t.status}</span>
+                </Link>
               ))}
             </CardContent>
           </Card>
@@ -189,10 +189,10 @@ export default function CeoMorningDashboard() {
             <CardContent className="space-y-2">
               {needs.dueFollowups?.length === 0 && <p className="text-xs text-text-muted">No follow-ups due today.</p>}
               {needs.dueFollowups?.map((f) => (
-                <div key={f._id} className="flex justify-between items-center text-xs p-2 bg-surface rounded border border-border">
+                <Link to="/crm/follow-ups" key={f._id} className="flex justify-between items-center text-xs p-2.5 bg-surface rounded-lg border border-border hover:border-success transition-colors">
                   <span className="font-semibold text-text">{f.leadId?.companyName || 'Lead'}</span>
                   <span className="text-xs text-text-muted">{new Date(f.followUpDate).toLocaleDateString()}</span>
-                </div>
+                </Link>
               ))}
             </CardContent>
           </Card>
