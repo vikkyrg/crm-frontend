@@ -80,7 +80,13 @@ export default function AMC() {
       toast.error('Service Name or Title is required');
       return;
     }
-    createMutation.mutate(formData);
+    const payload = {
+      ...formData,
+      title: formData.title || formData.serviceName,
+      endDate: formData.expiryDate || formData.endDate,
+      amcValue: Number(formData.amcAmount || formData.amcValue || 0)
+    };
+    createMutation.mutate(payload);
   };
 
   const columns = [
