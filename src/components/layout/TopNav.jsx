@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Bell, Plus, Moon, Sun, LogOut, User as UserIcon } from 'lucide-react';
+import { Search, Bell, Plus, Moon, Sun, LogOut, User as UserIcon, Menu } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
 
-export default function TopNav() {
+export default function TopNav({ onMenuClick }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -57,17 +57,27 @@ export default function TopNav() {
   }, []);
 
   return (
-    <header className="h-16 flex items-center justify-between px-6 border-b border-border bg-surface flex-shrink-0 z-40 relative">
+    <header className="h-16 flex items-center justify-between px-4 sm:px-6 border-b border-border bg-surface flex-shrink-0 z-30 relative">
       
-      {/* Breadcrumbs */}
-      <div className="flex items-center text-sm text-text-muted">
-        <span className="font-semibold text-primary">Innomatrics</span>
-        <span className="mx-2">/</span>
-        <span className="text-text font-medium">CRM Platform</span>
+      {/* Mobile Hamburger & Breadcrumbs */}
+      <div className="flex items-center space-x-3 text-sm text-text-muted">
+        <button
+          onClick={onMenuClick}
+          className="p-2 -ml-1 rounded-md text-text hover:bg-background lg:hidden transition-colors"
+          title="Open Menu"
+        >
+          <Menu className="h-5 w-5 text-primary" />
+        </button>
+
+        <div className="hidden sm:flex items-center">
+          <span className="font-semibold text-primary">Innomatrics</span>
+          <span className="mx-2">/</span>
+          <span className="text-text font-medium">CRM Platform</span>
+        </div>
       </div>
 
-      {/* Center - Global Search */}
-      <div className="flex-1 max-w-md mx-6 relative" ref={searchRef}>
+      {/* Center - Global Search (Responsive) */}
+      <div className="flex-1 max-w-xs sm:max-w-md mx-2 sm:mx-6 relative" ref={searchRef}>
         <div className="relative group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <input

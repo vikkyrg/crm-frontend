@@ -16,6 +16,7 @@ import Leads from '../pages/crm/Leads';
 import FollowUps from '../pages/crm/FollowUps';
 import Clients from '../pages/crm/Clients';
 import ClientDetail from '../pages/crm/Client360';
+import ServiceCatalog from '../pages/services/ServiceCatalog';
 import Quotations from '../pages/crm/Quotations';
 import Projects from '../pages/operations/Projects';
 import ProjectDetail from '../pages/operations/Project360';
@@ -71,6 +72,7 @@ const router = createBrowserRouter([
           { path: 'crm/follow-ups', element: <FollowUps /> },
           { path: 'clients', element: <Clients /> },
           { path: 'clients/:id', element: <ClientDetail /> },
+          { path: 'services/catalog', element: <ServiceCatalog /> },
           { path: 'sales/quotations', element: <Quotations /> },
           { path: 'sales/contracts', element: <Contracts /> },
           { path: 'projects', element: <Projects /> },

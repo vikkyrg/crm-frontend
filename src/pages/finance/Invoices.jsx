@@ -11,7 +11,8 @@ import {
   X, 
   Calendar,
   Building,
-  FolderKanban
+  FolderKanban,
+  Mail
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -121,6 +122,14 @@ export default function Invoices() {
       queryClient.invalidateQueries(['ceoView']);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to record payment')
+  });
+
+  const emailInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId) => api.post(`/invoices/${invoiceId}/send-email`),
+    onSuccess: (res) => {
+      toast.success(res.data?.message || 'Invoice email processed');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to dispatch invoice email')
   });
 
   // Line item helpers
@@ -249,7 +258,7 @@ export default function Invoices() {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-4">
@@ -671,9 +680,26 @@ export default function Invoices() {
             </div>
 
             <div className="p-4 border-t border-border bg-background/50 flex justify-between items-center">
-              <Button variant="outline" size="sm" onClick={() => window.print()}>
-                <Printer className="mr-1.5 h-3.5 w-3.5" /> Print / Export PDF
-              </Button>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" onClick={() => window.print()}>
+                  <Printer className="mr-1.5 h-3.5 w-3.5" /> Quick Print
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.open(`http://localhost:5000/api/v1/invoices/${viewInvoice._id}/print-html`, '_blank')}
+                >
+                  <Eye className="mr-1.5 h-3.5 w-3.5" /> Official PDF / Print View
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  disabled={emailInvoiceMutation.isPending}
+                  onClick={() => emailInvoiceMutation.mutate(viewInvoice._id)}
+                >
+                  <Mail className="mr-1.5 h-3.5 w-3.5" /> {emailInvoiceMutation.isPending ? 'Sending...' : 'Email Invoice'}
+                </Button>
+              </div>
               <Button size="sm" onClick={() => setViewInvoice(null)}>Close</Button>
             </div>
           </div>

@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { TableSkeleton } from '../../components/feedback/LoadingSkeleton';
 import ErrorState from '../../components/feedback/ErrorState';
 import DataTable from '../../components/tables/DataTable';
-import { Briefcase, FolderKanban, Receipt, Headset, FileArchive, Building } from 'lucide-react';
+import { Briefcase, FolderKanban, Receipt, Headset, FileArchive, Building, Printer, Eye } from 'lucide-react';
+import { Button } from '../../components/ui/Button';
 
 export default function ClientPortal() {
   const [activeTab, setActiveTab] = useState('projects');
@@ -32,16 +33,16 @@ export default function ClientPortal() {
   } = data;
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header Profile */}
-      <div className="bg-surface border border-border rounded-xl p-6 shadow-sm flex items-center justify-between">
+      <div className="bg-surface border border-border rounded-xl p-4 sm:p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-text flex items-center">
-            <Building className="mr-3 h-7 w-7 text-primary" /> {client.companyName || 'Client Portal'}
+          <h1 className="text-xl sm:text-2xl font-bold text-text flex items-center">
+            <Building className="mr-2 sm:mr-3 h-5 sm:h-7 w-5 sm:w-7 text-primary" /> {client.companyName || 'Client Portal'}
           </h1>
           <p className="text-xs text-text-muted mt-1">Client Account ID: {client.clientId} | Contact: {client.contactPerson}</p>
         </div>
-        <span className="px-3 py-1 bg-success/20 text-success text-xs font-bold rounded-full">Authorized Portal Access</span>
+        <span className="px-3 py-1 bg-success/20 text-success text-[11px] sm:text-xs font-bold rounded-full">Authorized Portal Access</span>
       </div>
 
       {/* Tabs */}
@@ -99,10 +100,23 @@ export default function ClientPortal() {
             <DataTable 
               columns={[
                 { header: 'Invoice #', accessor: 'invoiceNumber' },
-                { header: 'Total Amount', cell: (row) => `₹${row.totalAmount}` },
-                { header: 'Paid Amount', cell: (row) => `₹${row.amountPaid || 0}` },
-                { header: 'Balance Due', cell: (row) => `₹${row.balance}` },
-                { header: 'Status', accessor: 'status' }
+                { header: 'Total Amount', cell: (row) => `₹${(row.totalAmount || 0).toLocaleString()}` },
+                { header: 'Paid Amount', cell: (row) => `₹${(row.amountPaid || 0).toLocaleString()}` },
+                { header: 'Balance Due', cell: (row) => `₹${(row.balance || 0).toLocaleString()}` },
+                { header: 'Status', accessor: 'status' },
+                {
+                  header: 'Actions',
+                  cell: (row) => (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => window.open(`http://localhost:5000/api/v1/invoices/${row._id}/print-html`, '_blank')}
+                      title="View Official Branded PDF / Print Invoice"
+                    >
+                      <Printer className="mr-1 h-3.5 w-3.5" /> PDF / Print
+                    </Button>
+                  )
+                }
               ]}
               data={invoices}
             />

@@ -35,12 +35,12 @@ export default function EmployeePortal() {
   const { employee = {}, tasks = [], attendanceRecords = [], leaveRequests = [] } = data;
 
   return (
-    <div className="space-y-6 p-6 max-w-7xl mx-auto">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header Profile */}
-      <div className="bg-surface border border-border rounded-xl p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="bg-surface border border-border rounded-xl p-4 sm:p-6 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text flex items-center">
-            <User className="mr-3 h-7 w-7 text-primary" /> {employee.name || 'Employee Workspace'}
+          <h1 className="text-xl sm:text-2xl font-bold text-text flex items-center">
+            <User className="mr-2 sm:mr-3 h-5 sm:h-7 w-5 sm:w-7 text-primary" /> {employee.name || 'Employee Workspace'}
           </h1>
           <p className="text-xs text-text-muted mt-1">{employee.email} | Role: {employee.role?.name || 'Staff'}</p>
         </div>

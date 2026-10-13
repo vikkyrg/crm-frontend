@@ -59,8 +59,17 @@ export default function Quotations() {
     }
   });
 
+  const { data: catalogData } = useQuery({
+    queryKey: ['serviceCatalog'],
+    queryFn: async () => {
+      const res = await api.get('/service-catalog?limit=100');
+      return res.data || [];
+    }
+  });
+
   const clients = clientsData?.data || clientsData || [];
   const quotations = quotationsData?.data || quotationsData || [];
+  const catalogServices = catalogData?.data || catalogData || [];
 
   // Create Mutation
   const createMutation = useMutation({
@@ -279,7 +288,7 @@ export default function Quotations() {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-4">
@@ -398,6 +407,37 @@ export default function Quotations() {
                 <div className="space-y-3">
                   {formData.items.map((it, idx) => (
                     <div key={idx} className="p-3 bg-surface rounded-lg border border-border space-y-2">
+                      {catalogServices.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] text-text-muted whitespace-nowrap">Catalog Preset:</span>
+                          <select
+                            className="w-full text-xs p-1.5 rounded bg-background border border-border text-text"
+                            onChange={(e) => {
+                              const srv = catalogServices.find(s => s._id === e.target.value);
+                              if (srv) {
+                                const updated = [...formData.items];
+                                updated[idx] = {
+                                  ...updated[idx],
+                                  item: srv.serviceName,
+                                  description: srv.description || '',
+                                  rate: srv.unitPrice || 0,
+                                  taxPercent: srv.taxRate ?? 18
+                                };
+                                setFormData({ ...formData, items: updated });
+                              }
+                            }}
+                            defaultValue=""
+                          >
+                            <option value="">-- Choose from Master Catalog (Optional) --</option>
+                            {catalogServices.filter(s => s.isActive).map(s => (
+                              <option key={s._id} value={s._id}>
+                                {s.serviceCode} - {s.serviceName} (₹{(s.unitPrice || 0).toLocaleString()})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+
                       <div className="flex justify-between items-center gap-2">
                         <Input 
                           placeholder="Item Name / Description of Service"

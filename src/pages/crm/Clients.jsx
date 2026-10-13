@@ -243,11 +243,31 @@ export default function Clients() {
       )
     },
     { 
-      header: 'Account Manager', 
+      header: 'Projects & Services', 
       cell: (row) => (
-        <span className="text-xs font-medium text-text">
-          {row.accountManager?.name || 'Unassigned'}
-        </span>
+        <div className="text-xs space-y-1">
+          <div className="font-semibold text-text">
+            {row.projectsCount || 0} Project{row.projectsCount === 1 ? '' : 's'}
+          </div>
+          <div className="text-[11px] text-text-muted truncate max-w-[140px]">
+            {row.servicesList && row.servicesList.length > 0 
+              ? row.servicesList.slice(0, 2).join(', ') + (row.servicesList.length > 2 ? '...' : '') 
+              : 'Standard Services'}
+          </div>
+        </div>
+      )
+    },
+    { 
+      header: 'Financials', 
+      cell: (row) => (
+        <div className="text-xs space-y-0.5">
+          <div className="text-text">
+            <span className="text-text-muted">Inv:</span> ₹{(row.totalInvoiced || 0).toLocaleString()}
+          </div>
+          <div className={`font-semibold ${(row.totalOutstanding || 0) > 0 ? 'text-danger' : 'text-success'}`}>
+            <span className="text-text-muted font-normal">Bal:</span> ₹{(row.totalOutstanding || 0).toLocaleString()}
+          </div>
+        </div>
       )
     },
     { 
@@ -295,7 +315,7 @@ export default function Clients() {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border pb-4">

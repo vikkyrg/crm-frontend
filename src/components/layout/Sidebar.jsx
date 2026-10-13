@@ -22,7 +22,9 @@ import {
   UserCircle,
   Eye,
   CheckSquare,
-  DollarSign
+  DollarSign,
+  Layers,
+  X
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -43,6 +45,7 @@ const navSections = [
       { name: 'Leads', path: '/crm/leads', icon: Users },
       { name: 'Follow-ups', path: '/crm/follow-ups', icon: Repeat },
       { name: 'Clients', path: '/clients', icon: Briefcase },
+      { name: 'Service Catalog', path: '/services/catalog', icon: Layers },
       { name: 'Quotations', path: '/sales/quotations', icon: FileText },
       { name: 'Agreements', path: '/sales/contracts', icon: ShieldCheck },
     ],
@@ -105,55 +108,83 @@ const navSections = [
   }
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   return (
-    <aside className="w-64 border-r border-border bg-surface flex flex-col h-full flex-shrink-0">
-      {/* Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-border">
-        <h1 className="text-xl font-bold tracking-tight text-primary">
-          INNOMATRICS
-          <span className="block text-xs font-normal text-text-muted">CRM / ERP PLATFORM</span>
-        </h1>
-      </div>
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          onClick={onClose}
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 lg:hidden transition-opacity"
+        />
+      )}
 
-      {/* Navigation */}
-      <div className="flex-1 overflow-y-auto py-4 scrollbar-thin">
-        {navSections.map((section, idx) => (
-          <div key={idx} className="mb-6">
-            <h2 className="px-6 text-xs font-semibold text-text-muted tracking-wider mb-2">
-              {section.title}
-            </h2>
-            <nav className="space-y-1 px-3">
-              {section.items.map((item) => (
-                <NavLink
-                  key={item.name}
-                  to={item.path}
-                  className={({ isActive }) => cn(
-                    "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    isActive 
-                      ? "bg-primary/10 text-primary font-semibold" 
-                      : "text-text-muted hover:bg-surface hover:text-text"
-                  )}
-                >
-                  <item.icon className="mr-3 h-4 w-4 flex-shrink-0" />
-                  {item.name}
-                </NavLink>
-              ))}
-            </nav>
+      {/* Sidebar container */}
+      <aside className={cn(
+        "w-64 border-r border-border bg-surface flex flex-col h-full flex-shrink-0 z-50 transition-transform duration-300 ease-in-out",
+        "fixed inset-y-0 left-0 lg:static lg:translate-x-0",
+        isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
+      )}>
+        {/* Logo & Mobile Close Button */}
+        <div className="h-16 flex items-center justify-between px-6 border-b border-border">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-primary">
+              INNOMATRICS
+            </h1>
+            <span className="block text-[10px] font-medium text-text-muted uppercase tracking-wider">CRM / ERP PLATFORM</span>
           </div>
-        ))}
-      </div>
-      
-      {/* User Info / Bottom */}
-      <div className="p-4 border-t border-border">
-        <div className="flex items-center text-sm font-medium text-text">
-          <UserCircle className="mr-3 h-8 w-8 text-primary" />
-          <div className="flex flex-col overflow-hidden">
-            <span className="truncate">Super Admin</span>
-            <span className="text-xs text-text-muted truncate">admin@innomatrics.com</span>
+          {/* Close button on mobile */}
+          <button 
+            onClick={onClose}
+            className="p-1 rounded-md text-text-muted hover:text-text hover:bg-background lg:hidden transition-colors"
+            title="Close menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto py-4 scrollbar-thin">
+          {navSections.map((section, idx) => (
+            <div key={idx} className="mb-6">
+              <h2 className="px-6 text-xs font-semibold text-text-muted tracking-wider mb-2">
+                {section.title}
+              </h2>
+              <nav className="space-y-1 px-3">
+                {section.items.map((item) => (
+                  <NavLink
+                    key={item.name}
+                    to={item.path}
+                    onClick={() => {
+                      if (onClose) onClose();
+                    }}
+                    className={({ isActive }) => cn(
+                      "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                      isActive 
+                        ? "bg-primary/10 text-primary font-semibold" 
+                        : "text-text-muted hover:bg-surface hover:text-text"
+                    )}
+                  >
+                    <item.icon className="mr-3 h-4 w-4 flex-shrink-0" />
+                    {item.name}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          ))}
+        </div>
+        
+        {/* User Info / Bottom */}
+        <div className="p-4 border-t border-border bg-background/30">
+          <div className="flex items-center text-sm font-medium text-text">
+            <UserCircle className="mr-3 h-8 w-8 text-primary shrink-0" />
+            <div className="flex flex-col overflow-hidden">
+              <span className="truncate text-xs font-semibold">Super Admin</span>
+              <span className="text-[11px] text-text-muted truncate">admin@innomatrics.com</span>
+            </div>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 }

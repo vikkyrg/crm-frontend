@@ -232,8 +232,8 @@ export default function DataTable({ columns, data, onRowClick, reportName = "Exp
       </div>
 
       {/* Pagination */}
-      <div className="p-4 flex items-center justify-between border-t border-border bg-background/30">
-        <span className="text-sm text-text-muted">
+      <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border bg-background/30 text-xs">
+        <span className="text-text-muted text-center sm:text-left">
           Showing {filteredData.length === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + rowsPerPage, filteredData.length)} of {filteredData.length} entries
         </span>
         <div className="flex space-x-2">
@@ -247,7 +247,7 @@ export default function DataTable({ columns, data, onRowClick, reportName = "Exp
           </Button>
           <Button 
             variant="outline" 
-            size="sm"
+            size="sm" 
             disabled={currentPage === totalPages || filteredData.length === 0}
             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
           >

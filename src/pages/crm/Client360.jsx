@@ -36,6 +36,7 @@ export default function Client360() {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('overview');
+  const [projectStatusFilter, setProjectStatusFilter] = useState('All');
 
   // Modals
   const [showEditModal, setShowEditModal] = useState(false);
@@ -77,6 +78,47 @@ export default function Client360() {
     }
   });
 
+  // Add Project Mutation (Pre-linked to this client)
+  const [showAddProjectModal, setShowAddProjectModal] = useState(false);
+  const [projectForm, setProjectForm] = useState({
+    projectName: '',
+    serviceType: 'Website Development',
+    budget: '',
+    advanceType: 'Percentage',
+    advancePercentage: 30,
+    advanceRequired: 0,
+    startDate: new Date().toISOString().split('T')[0],
+    expectedEndDate: '',
+    status: 'Active',
+    priority: 'Medium'
+  });
+
+  const addProjectMutation = useMutation({
+    mutationFn: async (payload) => api.post('/projects', { ...payload, clientId: id }),
+    onSuccess: () => {
+      toast.success('Project created and linked to client successfully!');
+      setShowAddProjectModal(false);
+      setProjectForm({
+        projectName: '',
+        serviceType: 'Website Development',
+        budget: '',
+        advanceType: 'Percentage',
+        advancePercentage: 30,
+        advanceRequired: 0,
+        startDate: new Date().toISOString().split('T')[0],
+        expectedEndDate: '',
+        status: 'Active',
+        priority: 'Medium'
+      });
+      queryClient.invalidateQueries(['client360', id]);
+      queryClient.invalidateQueries(['clients']);
+      queryClient.invalidateQueries(['projects']);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to create project');
+    }
+  });
+
   if (isLoading) return <div className="p-6"><TableSkeleton /></div>;
   if (isError) return <div className="p-6"><ErrorState title="Failed to load Client 360 View" onRetry={refetch} /></div>;
 
@@ -97,6 +139,7 @@ export default function Client360() {
     payments = [],
     expenses = [],
     documents = [],
+    creditNotes = [],
     activityTimeline = []
   } = data;
 
@@ -113,10 +156,10 @@ export default function Client360() {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       
       {/* Header Profile Card */}
-      <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
+      <div className="bg-surface border border-border rounded-xl p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center space-x-3">
@@ -155,23 +198,48 @@ export default function Client360() {
           </div>
         </div>
 
-        {/* 360 Financial KPI Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
-          <div className="bg-background p-3.5 rounded-lg border border-border text-center">
-            <p className="text-xs text-text-muted font-medium">Total Invoiced</p>
-            <p className="text-lg font-bold text-text mt-0.5">₹{(summary.totalInvoiced || 0).toLocaleString()}</p>
+        {/* 360 Comprehensive KPI Summary */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 mt-6 pt-6 border-t border-border">
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Contract Value</p>
+            <p className="text-base font-bold text-text mt-0.5">₹{(summary.totalContractValue || 0).toLocaleString()}</p>
           </div>
-          <div className="bg-background p-3.5 rounded-lg border border-border text-center">
-            <p className="text-xs text-text-muted font-medium">Total Collected</p>
-            <p className="text-lg font-bold text-success mt-0.5">₹{(summary.totalPaid || 0).toLocaleString()}</p>
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Total Invoiced</p>
+            <p className="text-base font-bold text-primary mt-0.5">₹{(summary.totalInvoiced || 0).toLocaleString()}</p>
           </div>
-          <div className="bg-background p-3.5 rounded-lg border border-border text-center">
-            <p className="text-xs text-text-muted font-medium">Outstanding Balance</p>
-            <p className="text-lg font-bold text-danger mt-0.5">₹{(summary.totalOutstanding || 0).toLocaleString()}</p>
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Total Collected</p>
+            <p className="text-base font-bold text-success mt-0.5">₹{(summary.totalPaid || 0).toLocaleString()}</p>
           </div>
-          <div className="bg-background p-3.5 rounded-lg border border-border text-center">
-            <p className="text-xs text-text-muted font-medium">Active Projects</p>
-            <p className="text-lg font-bold text-primary mt-0.5">{summary.totalProjects || 0}</p>
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Advance Received</p>
+            <p className="text-base font-bold text-purple-400 mt-0.5">₹{(summary.totalAdvanceReceived || 0).toLocaleString()}</p>
+          </div>
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Outstanding Bal.</p>
+            <p className="text-base font-bold text-danger mt-0.5">₹{(summary.totalOutstanding || 0).toLocaleString()}</p>
+          </div>
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Overdue Amount</p>
+            <p className="text-base font-bold text-amber-500 mt-0.5">₹{(summary.totalOverdue || 0).toLocaleString()}</p>
+          </div>
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Unbilled Value</p>
+            <p className="text-base font-bold text-text mt-0.5">₹{(summary.totalUnbilled || 0).toLocaleString()}</p>
+          </div>
+          <div 
+            onClick={() => {
+              setActiveTab('projects');
+              setProjectStatusFilter('All');
+            }}
+            className="bg-background p-3 rounded-lg border border-border text-center cursor-pointer hover:border-primary transition-all group"
+            title="Click to view all projects"
+          >
+            <p className="text-[11px] text-text-muted font-medium group-hover:text-primary transition-colors">Projects (Act/Tot)</p>
+            <p className="text-base font-bold text-primary mt-0.5">
+              <span className="text-success">{summary.activeProjects || 0}</span> / {summary.totalProjects || 0}
+            </p>
           </div>
         </div>
       </div>
@@ -286,10 +354,41 @@ export default function Client360() {
       {/* PROJECTS TAB */}
       {activeTab === 'projects' && (
         <Card>
-          <CardHeader><CardTitle className="text-base">Projects Portfolio</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-base">Projects Portfolio ({projects.length})</CardTitle>
+            <Button size="sm" onClick={() => setShowAddProjectModal(true)}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Project
+            </Button>
+          </CardHeader>
           <CardContent>
+            {/* Project Status Filter Pills */}
+            <div className="flex flex-wrap items-center gap-1.5 mb-4 pb-3 border-b border-border">
+              <span className="text-[11px] font-semibold text-text-muted mr-2">Filter by Status:</span>
+              {['All', 'Active', 'Planning', 'In Progress', 'Testing', 'Completed', 'On Hold', 'Delayed'].map((st) => (
+                <button
+                  key={st}
+                  onClick={() => setProjectStatusFilter(st)}
+                  className={`px-2.5 py-1 text-xs rounded-full font-medium transition-colors ${
+                    projectStatusFilter === st
+                      ? 'bg-primary text-white shadow-xs'
+                      : 'bg-background hover:bg-surface text-text-muted hover:text-text border border-border'
+                  }`}
+                >
+                  {st}
+                  {st === 'All' 
+                    ? ` (${projects.length})` 
+                    : ` (${projects.filter(p => p.status === st).length})`}
+                </button>
+              ))}
+            </div>
+
             {projects.length === 0 ? (
-              <p className="text-xs text-text-muted py-6 text-center">No projects associated with this client.</p>
+              <div className="py-8 text-center space-y-3">
+                <p className="text-xs text-text-muted">No projects associated with this client yet.</p>
+                <Button size="sm" onClick={() => setShowAddProjectModal(true)}>
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Create First Project
+                </Button>
+              </div>
             ) : (
               <DataTable 
                 columns={[
@@ -302,10 +401,22 @@ export default function Client360() {
                       </Link>
                     ) 
                   },
-                  { header: 'Status', accessor: 'status' },
+                  { 
+                    header: 'Status', 
+                    cell: (row) => (
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                        row.status === 'Completed' ? 'bg-success/20 text-success' :
+                        row.status === 'Active' || row.status === 'In Progress' ? 'bg-primary/20 text-primary' :
+                        row.status === 'Delayed' ? 'bg-danger/20 text-danger' :
+                        'bg-warning/20 text-warning'
+                      }`}>
+                        {row.status}
+                      </span>
+                    )
+                  },
                   { header: 'Budget', cell: (row) => `₹${(row.budget || 0).toLocaleString()}` }
                 ]}
-                data={projects}
+                data={projectStatusFilter === 'All' ? projects : projects.filter(p => p.status === projectStatusFilter)}
               />
             )}
           </CardContent>
@@ -377,6 +488,25 @@ export default function Client360() {
                     { header: 'Date', cell: (row) => new Date(row.paymentDate || row.createdAt).toLocaleDateString() }
                   ]}
                   data={payments}
+                />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-base">Credit Notes & Adjustments ({creditNotes.length})</CardTitle></CardHeader>
+            <CardContent>
+              {creditNotes.length === 0 ? <p className="text-xs text-text-muted py-4 text-center">No credit notes issued for this client.</p> : (
+                <DataTable 
+                  columns={[
+                    { header: 'Credit Note #', accessor: 'creditNoteNumber' },
+                    { header: 'Credit Amount', cell: (row) => `₹${(row.totalCreditAmount || 0).toLocaleString()}` },
+                    { header: 'Adjustment Type', accessor: 'adjustmentType' },
+                    { header: 'Reason', accessor: 'reason' },
+                    { header: 'Status', accessor: 'status' },
+                    { header: 'Date', cell: (row) => new Date(row.issueDate || row.createdAt).toLocaleDateString() }
+                  ]}
+                  data={creditNotes}
                 />
               )}
             </CardContent>
@@ -519,6 +649,16 @@ export default function Client360() {
           isLoading={addContactMutation.isPending}
           onClose={() => setShowAddContactModal(false)}
           onSave={(payload) => addContactMutation.mutate(payload)}
+        />
+      )}
+
+      {/* ADD PROJECT MODAL */}
+      {showAddProjectModal && (
+        <AddProjectModal
+          clientName={client.companyName}
+          isLoading={addProjectMutation.isPending}
+          onClose={() => setShowAddProjectModal(false)}
+          onSave={(payload) => addProjectMutation.mutate(payload)}
         />
       )}
 
@@ -766,3 +906,169 @@ function AddContactModal({ isLoading, onClose, onSave }) {
     </div>
   );
 }
+
+// Add Project Modal for Client360
+function AddProjectModal({ clientName, isLoading, onClose, onSave }) {
+  const [form, setForm] = useState({
+    projectName: '',
+    serviceType: 'Website Development',
+    budget: '',
+    advanceType: 'Percentage',
+    advancePercentage: 30,
+    advanceRequired: 0,
+    startDate: new Date().toISOString().split('T')[0],
+    expectedEndDate: '',
+    status: 'Active',
+    priority: 'Medium'
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.projectName.trim()) {
+      toast.error('Project Name is required');
+      return;
+    }
+    const numBudget = Number(form.budget) || 0;
+    let advReq = 0;
+    if (form.advanceType === 'Percentage') {
+      advReq = (numBudget * (Number(form.advancePercentage) || 0)) / 100;
+    } else if (form.advanceType === 'Fixed') {
+      advReq = Number(form.advanceRequired) || 0;
+    }
+
+    onSave({
+      ...form,
+      budget: numBudget,
+      advanceRequired: advReq
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-surface border border-border rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-border">
+          <div>
+            <h2 className="text-lg font-bold text-text">Create Project for {clientName}</h2>
+            <p className="text-xs text-text-muted">Link a new independent project to this client profile</p>
+          </div>
+          <button onClick={onClose} className="text-text-muted hover:text-text"><X className="h-5 w-5" /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
+          <div>
+            <label className="font-semibold text-text block mb-1">Project Name *</label>
+            <input 
+              type="text" 
+              required
+              value={form.projectName}
+              onChange={(e) => setForm({ ...form, projectName: e.target.value })}
+              className="w-full bg-background border border-border rounded p-2 text-text"
+              placeholder="e.g. NextGen Web Portal & Mobile App"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="font-semibold text-text block mb-1">Service Type</label>
+              <select 
+                value={form.serviceType}
+                onChange={(e) => setForm({ ...form, serviceType: e.target.value })}
+                className="w-full bg-background border border-border rounded p-2 text-text"
+              >
+                <option value="Website Development">Website Development</option>
+                <option value="Website Design">Website Design</option>
+                <option value="Mobile App Development">Mobile App Development</option>
+                <option value="Custom Software Development">Custom Software Development</option>
+                <option value="AMC">AMC & Maintenance</option>
+                <option value="SEO and Digital Marketing">SEO & Digital Marketing</option>
+              </select>
+            </div>
+            <div>
+              <label className="font-semibold text-text block mb-1">Agreed Value / Budget (₹) *</label>
+              <input 
+                type="number" 
+                required
+                min="0"
+                value={form.budget}
+                onChange={(e) => setForm({ ...form, budget: e.target.value })}
+                className="w-full bg-background border border-border rounded p-2 text-text"
+                placeholder="e.g. 250000"
+              />
+            </div>
+          </div>
+
+          {/* Advance Configuration */}
+          <div className="p-3 bg-background border border-border rounded-lg space-y-2">
+            <label className="font-semibold text-text block">Advance Payment Requirement</label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <select 
+                  value={form.advanceType}
+                  onChange={(e) => setForm({ ...form, advanceType: e.target.value })}
+                  className="w-full bg-surface border border-border rounded p-1.5 text-text"
+                >
+                  <option value="Percentage">Percentage of Budget</option>
+                  <option value="Fixed">Fixed Amount</option>
+                  <option value="None">No Advance Required</option>
+                </select>
+              </div>
+              <div>
+                {form.advanceType === 'Percentage' ? (
+                  <div className="flex items-center space-x-1">
+                    <input 
+                      type="number" 
+                      min="0"
+                      max="100"
+                      value={form.advancePercentage}
+                      onChange={(e) => setForm({ ...form, advancePercentage: e.target.value })}
+                      className="w-full bg-surface border border-border rounded p-1.5 text-text text-right"
+                    />
+                    <span className="text-text-muted font-bold">%</span>
+                  </div>
+                ) : form.advanceType === 'Fixed' ? (
+                  <input 
+                    type="number" 
+                    min="0"
+                    value={form.advanceRequired}
+                    onChange={(e) => setForm({ ...form, advanceRequired: e.target.value })}
+                    className="w-full bg-surface border border-border rounded p-1.5 text-text"
+                    placeholder="Advance ₹"
+                  />
+                ) : (
+                  <span className="text-text-muted text-[11px] block pt-1.5">No advance mandatory</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="font-semibold text-text block mb-1">Start Date</label>
+              <input 
+                type="date" 
+                value={form.startDate}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                className="w-full bg-background border border-border rounded p-2 text-text"
+              />
+            </div>
+            <div>
+              <label className="font-semibold text-text block mb-1">Expected Delivery Date</label>
+              <input 
+                type="date" 
+                value={form.expectedEndDate}
+                onChange={(e) => setForm({ ...form, expectedEndDate: e.target.value })}
+                className="w-full bg-background border border-border rounded p-2 text-text"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t border-border">
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" isLoading={isLoading}>Create Project</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+

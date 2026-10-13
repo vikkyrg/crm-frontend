@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -36,6 +36,7 @@ export default function Project360() {
 
   const {
     project = {},
+    financialSummary = {},
     profitability = {},
     milestones = [],
     tasks = [],
@@ -60,10 +61,10 @@ export default function Project360() {
   ];
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       
       {/* Header Profile Card */}
-      <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
+      <div className="bg-surface border border-border rounded-xl p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center space-x-3">
@@ -75,30 +76,48 @@ export default function Project360() {
             </div>
           </div>
 
-          <span className="px-3 py-1 bg-primary/10 text-primary font-semibold text-xs rounded-full">
-            {project.status || 'Active'}
-          </span>
+          <div className="flex items-center space-x-3">
+            {project.clientId?._id && (
+              <Link 
+                to={`/clients/${project.clientId._id}`} 
+                className="text-xs text-primary font-semibold hover:underline bg-primary/10 px-3 py-1 rounded"
+              >
+                &larr; Back to Client 360°
+              </Link>
+            )}
+            <span className="px-3 py-1 bg-primary/10 text-primary font-semibold text-xs rounded-full">
+              {project.status || 'Active'}
+            </span>
+          </div>
         </div>
 
-        {/* Financial Profitability Bar */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
+        {/* Detailed Financial & Profitability Summary */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6 pt-6 border-t border-border">
           <div className="bg-background p-3 rounded-lg border border-border text-center">
-            <p className="text-xs text-text-muted font-medium">Project Revenue</p>
-            <p className="text-lg font-bold text-text mt-0.5">₹{profitability.revenue || 0}</p>
+            <p className="text-[11px] text-text-muted font-medium">Agreed Value</p>
+            <p className="text-base font-bold text-text mt-0.5">₹{(financialSummary.agreedProjectValue || project.budget || 0).toLocaleString()}</p>
           </div>
           <div className="bg-background p-3 rounded-lg border border-border text-center">
-            <p className="text-xs text-text-muted font-medium">Total Cost (Labor + Direct)</p>
-            <p className="text-lg font-bold text-warning mt-0.5">₹{profitability.totalCost || 0}</p>
+            <p className="text-[11px] text-text-muted font-medium">Invoiced</p>
+            <p className="text-base font-bold text-primary mt-0.5">₹{(financialSummary.totalInvoiced || 0).toLocaleString()}</p>
           </div>
           <div className="bg-background p-3 rounded-lg border border-border text-center">
-            <p className="text-xs text-text-muted font-medium">Project Profit</p>
-            <p className={`text-lg font-bold mt-0.5 ${profitability.projectProfit >= 0 ? 'text-success' : 'text-danger'}`}>
-              ₹{profitability.projectProfit || 0}
+            <p className="text-[11px] text-text-muted font-medium">Collected</p>
+            <p className="text-base font-bold text-success mt-0.5">₹{(financialSummary.totalReceived || profitability.revenue || 0).toLocaleString()}</p>
+          </div>
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Unbilled Value</p>
+            <p className="text-base font-bold text-text mt-0.5">₹{(financialSummary.unbilledProjectValue || 0).toLocaleString()}</p>
+          </div>
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Total Cost</p>
+            <p className="text-base font-bold text-warning mt-0.5">₹{(profitability.totalCost || 0).toLocaleString()}</p>
+          </div>
+          <div className="bg-background p-3 rounded-lg border border-border text-center">
+            <p className="text-[11px] text-text-muted font-medium">Net Profit / Margin</p>
+            <p className={`text-base font-bold mt-0.5 ${(profitability.projectProfit || 0) >= 0 ? 'text-success' : 'text-danger'}`}>
+              ₹{(profitability.projectProfit || 0).toLocaleString()} ({profitability.marginPercent || 0}%)
             </p>
-          </div>
-          <div className="bg-background p-3 rounded-lg border border-border text-center">
-            <p className="text-xs text-text-muted font-medium">Margin %</p>
-            <p className="text-lg font-bold text-primary mt-0.5">{profitability.marginPercent || 0}%</p>
           </div>
         </div>
       </div>
@@ -226,16 +245,25 @@ export default function Project360() {
               <span className="font-bold text-success">₹{profitability.revenue || 0}</span>
             </div>
             <div className="flex justify-between border-b border-border pb-2">
-              <span className="text-text-muted">Labor Cost ({profitability.laborHours || 0} hrs @ ₹500/hr):</span>
-              <span className="font-bold text-warning">₹{profitability.laborCost || 0}</span>
+              <div>
+                <span className="text-text-muted">Labor Cost ({profitability.laborHours || 0} hrs):</span>
+                {profitability.isLaborCostEstimated ? (
+                  <span className="ml-2 text-[10px] bg-warning/20 text-warning px-1.5 py-0.5 rounded font-medium">Estimated / Incomplete Payroll</span>
+                ) : (
+                  <span className="ml-2 text-[10px] bg-success/20 text-success px-1.5 py-0.5 rounded font-medium">Actual Employee Rates</span>
+                )}
+              </div>
+              <span className="font-bold text-warning">₹{(profitability.laborCost || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between border-b border-border pb-2">
               <span className="text-text-muted">Direct Expenses Cost:</span>
-              <span className="font-bold text-warning">₹{profitability.directExpensesCost || 0}</span>
+              <span className="font-bold text-warning">₹{(profitability.directExpensesCost || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between border-b border-border pb-2 pt-2 text-sm font-extrabold">
               <span>Net Project Profit:</span>
-              <span className={profitability.projectProfit >= 0 ? 'text-success' : 'text-danger'}>₹{profitability.projectProfit || 0}</span>
+              <span className={(profitability.projectProfit || 0) >= 0 ? 'text-success' : 'text-danger'}>
+                ₹{(profitability.projectProfit || 0).toLocaleString()} ({profitability.marginPercent || 0}%)
+              </span>
             </div>
           </CardContent>
         </Card>
