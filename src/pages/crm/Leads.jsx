@@ -14,17 +14,24 @@ export default function Leads() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const [editingLead, setEditingLead] = useState(null);
+  const [viewingLead, setViewingLead] = useState(null);
   const [newNote, setNewNote] = useState('');
 
-  const [formData, setFormData] = useState({
+  const initialForm = {
     companyName: '',
     contactName: '',
     email: '',
     phone: '',
     leadSource: 'Website',
     estimatedBudget: 100000,
+    status: 'New',
+    priority: 'Medium',
+    serviceInterested: '',
     notes: ''
-  });
+  };
+
+  const [formData, setFormData] = useState(initialForm);
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['leads'],
@@ -48,10 +55,22 @@ export default function Leads() {
     onSuccess: () => {
       toast.success('Lead created successfully!');
       setShowAddModal(false);
-      setFormData({ companyName: '', contactName: '', email: '', phone: '', leadSource: 'Website', estimatedBudget: 100000, notes: '' });
+      setFormData(initialForm);
       queryClient.invalidateQueries(['leads']);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to create lead')
+  });
+
+  const updateLeadMutation = useMutation({
+    mutationFn: async ({ id, payload }) => api.put(`/leads/${id}`, payload),
+    onSuccess: () => {
+      toast.success('Lead updated successfully!');
+      setEditingLead(null);
+      setShowAddModal(false);
+      setFormData(initialForm);
+      queryClient.invalidateQueries(['leads']);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to update lead')
   });
 
   const convertMutation = useMutation({
@@ -93,6 +112,42 @@ export default function Leads() {
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete note')
   });
+
+  const openCreateModal = () => {
+    setEditingLead(null);
+    setFormData(initialForm);
+    setShowAddModal(true);
+  };
+
+  const openEditModal = (lead) => {
+    setEditingLead(lead);
+    setFormData({
+      companyName: lead.companyName || '',
+      contactName: lead.contactName || '',
+      email: lead.email || '',
+      phone: lead.phone || '',
+      leadSource: lead.leadSource || 'Website',
+      estimatedBudget: lead.estimatedBudget || 0,
+      status: lead.status || 'New',
+      priority: lead.priority || 'Medium',
+      serviceInterested: lead.serviceInterested || '',
+      notes: lead.notes || ''
+    });
+    setShowAddModal(true);
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.companyName || !formData.contactName) {
+      toast.error('Company Name and Contact Person are required');
+      return;
+    }
+    if (editingLead) {
+      updateLeadMutation.mutate({ id: editingLead._id, payload: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
 
   const displayData = data?.data || data || [];
 
@@ -148,14 +203,13 @@ export default function Leads() {
             </button>
           )}
           <DropdownMenu>
-            {/* Future View/Edit actions can go here */}
-            <DropdownItem icon={Eye} onClick={() => toast.info('View Details coming soon')}>View Details</DropdownItem>
-            <DropdownItem icon={Edit} onClick={() => toast.info('Edit Lead coming soon')}>Edit</DropdownItem>
+            <DropdownItem icon={Eye} onClick={() => setViewingLead(row)}>View Details</DropdownItem>
+            <DropdownItem icon={Edit} onClick={() => openEditModal(row)}>Edit</DropdownItem>
             <DropdownItem 
               icon={Trash2} 
               danger 
               onClick={() => {
-                if (window.confirm('Are you sure you want to delete this lead?')) {
+                if (window.confirm(`Are you sure you want to delete lead for "${row.companyName}"?`)) {
                   deleteLeadMutation.mutate(row._id);
                 }
               }}
@@ -177,7 +231,7 @@ export default function Leads() {
           </h1>
           <p className="text-sm text-text-muted mt-1">Track and manage sales pipeline leads from inquiry to client conversion.</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)}>
+        <Button onClick={openCreateModal}>
           <Plus className="mr-2 h-4 w-4" /> Add Lead
         </Button>
       </div>
@@ -191,13 +245,15 @@ export default function Leads() {
         <DataTable columns={columns} data={displayData} reportName="Leads_Export" />
       )}
 
-      {/* CREATE LEAD MODAL */}
+      {/* CREATE & EDIT LEAD MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-lg shadow-2xl">
-            <h2 className="text-lg font-bold text-text mb-4">Create New Sales Lead</h2>
+            <h2 className="text-lg font-bold text-text mb-4">
+              {editingLead ? `Edit Lead: ${editingLead.leadId || editingLead.companyName}` : 'Create New Sales Lead'}
+            </h2>
             
-            <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(formData); }} className="space-y-4 text-xs">
+            <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
               <div>
                 <label className="font-semibold text-text block mb-1">Company Name *</label>
                 <input 
@@ -257,10 +313,14 @@ export default function Leads() {
                     <option value="Website">Website</option>
                     <option value="Google Ads">Google Ads</option>
                     <option value="Facebook">Facebook</option>
+                    <option value="Instagram">Instagram</option>
                     <option value="WhatsApp">WhatsApp</option>
                     <option value="Referral">Referral</option>
                     <option value="Upwork">Upwork</option>
+                    <option value="Freelancer">Freelancer</option>
                     <option value="Cold Call">Cold Call</option>
+                    <option value="Existing Client">Existing Client</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
 
@@ -275,11 +335,144 @@ export default function Leads() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-semibold text-text block mb-1">Pipeline Status</label>
+                  <select 
+                    value={formData.status}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    className="w-full bg-background border border-border rounded p-2 text-text"
+                  >
+                    <option value="New">New</option>
+                    <option value="Contacted">Contacted</option>
+                    <option value="Qualified">Qualified</option>
+                    <option value="Proposal">Proposal</option>
+                    <option value="Negotiation">Negotiation</option>
+                    <option value="Won">Won</option>
+                    <option value="Lost">Lost</option>
+                    <option value="On Hold">On Hold</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-text block mb-1">Priority</label>
+                  <select 
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
+                    className="w-full bg-background border border-border rounded p-2 text-text"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-text block mb-1">Service Interested In</label>
+                <input 
+                  type="text" 
+                  value={formData.serviceInterested}
+                  onChange={(e) => setFormData({ ...formData, serviceInterested: e.target.value })}
+                  className="w-full bg-background border border-border rounded p-2 text-text"
+                  placeholder="e.g. E-Commerce Web Application, Mobile App"
+                />
+              </div>
+
               <div className="flex justify-end space-x-3 pt-4 border-t border-border">
-                <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
-                <Button type="submit" isLoading={createMutation.isPending}>Save Lead</Button>
+                <Button type="button" variant="outline" onClick={() => { setShowAddModal(false); setEditingLead(null); }}>
+                  Cancel
+                </Button>
+                <Button type="submit" isLoading={createMutation.isPending || updateLeadMutation.isPending}>
+                  {editingLead ? 'Update Lead' : 'Save Lead'}
+                </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW DETAILS MODAL */}
+      {viewingLead && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-lg shadow-2xl space-y-4 text-xs">
+            <div className="flex justify-between items-center pb-3 border-b border-border">
+              <div>
+                <span className="font-mono text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded font-semibold">
+                  {viewingLead.leadId}
+                </span>
+                <h2 className="text-lg font-bold text-text mt-1">{viewingLead.companyName}</h2>
+              </div>
+              <button 
+                onClick={() => setViewingLead(null)}
+                className="text-text-muted hover:text-text p-1 rounded hover:bg-background text-base"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <p className="text-[10px] text-text-muted uppercase font-semibold">Contact Person</p>
+                <p className="font-bold text-text text-sm mt-0.5">{viewingLead.contactName}</p>
+                <p className="text-text-muted mt-1">{viewingLead.email || 'No email'}</p>
+                <p className="text-text-muted">{viewingLead.phone || 'No phone'}</p>
+              </div>
+              <div className="bg-background p-3 rounded-lg border border-border">
+                <p className="text-[10px] text-text-muted uppercase font-semibold">Commercials</p>
+                <p className="font-bold text-text text-sm mt-0.5">₹{(viewingLead.estimatedBudget || 0).toLocaleString()}</p>
+                <p className="text-text-muted mt-1">Source: <span className="text-text font-medium">{viewingLead.leadSource}</span></p>
+                <p className="text-text-muted">Priority: <span className="font-medium text-text">{viewingLead.priority || 'Medium'}</span></p>
+              </div>
+            </div>
+
+            <div className="bg-background p-3 rounded-lg border border-border space-y-1">
+              <div className="flex justify-between items-center">
+                <span className="text-text-muted">Status:</span>
+                <span className="font-bold px-2 py-0.5 rounded text-primary bg-primary/10">{viewingLead.status}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-muted">Service Interest:</span>
+                <span className="font-medium text-text">{viewingLead.serviceInterested || 'General Inquiry'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-muted">Converted to Client:</span>
+                <span className="font-semibold text-text">{viewingLead.isConverted ? 'Yes (Converted)' : 'No'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-text-muted">Created Date:</span>
+                <span className="font-mono text-text">{new Date(viewingLead.createdAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-border">
+              <button 
+                onClick={() => {
+                  const leadToNote = viewingLead;
+                  setViewingLead(null);
+                  setSelectedLead(leadToNote);
+                  setShowNotesModal(true);
+                }}
+                className="text-primary hover:underline flex items-center font-semibold"
+              >
+                <MessageSquare className="h-4 w-4 mr-1" /> View Notes ({viewingLead.notesCount || 0})
+              </button>
+              <div className="flex space-x-2">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => {
+                    const leadToEdit = viewingLead;
+                    setViewingLead(null);
+                    openEditModal(leadToEdit);
+                  }}
+                >
+                  <Edit className="h-3.5 w-3.5 mr-1" /> Edit Lead
+                </Button>
+                <Button size="sm" onClick={() => setViewingLead(null)}>Close</Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

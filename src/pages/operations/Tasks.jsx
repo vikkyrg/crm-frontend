@@ -39,6 +39,18 @@ export default function Tasks() {
     description: ''
   });
 
+  const [editingTask, setEditingTask] = useState(null);
+  const [editForm, setEditForm] = useState({
+    taskName: '',
+    projectId: '',
+    assignedEmployee: '',
+    priority: 'Medium',
+    status: 'To Do',
+    dueDate: '',
+    estimatedHours: 8,
+    description: ''
+  });
+
   // Queries
   const { data: projectsData } = useQuery({
     queryKey: ['projects'],
@@ -104,6 +116,19 @@ export default function Tasks() {
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || 'Failed to update task status');
+    }
+  });
+
+  // Edit Task Mutation
+  const updateTaskMutation = useMutation({
+    mutationFn: async ({ id, payload }) => api.put(`/tasks/${id}`, payload),
+    onSuccess: () => {
+      toast.success('Task updated successfully!');
+      setEditingTask(null);
+      queryClient.invalidateQueries(['tasks']);
+    },
+    onError: (err) => {
+      toast.error(err.response?.data?.message || 'Failed to update task');
     }
   });
 
@@ -196,17 +221,38 @@ export default function Tasks() {
     {
       header: 'Actions',
       cell: (row) => (
-        <button 
-          onClick={() => {
-            if (window.confirm('Delete this task?')) {
-              deleteTaskMutation.mutate(row._id);
-            }
-          }}
-          className="p-1.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded transition-colors"
-          title="Delete task"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center space-x-1">
+          <button 
+            onClick={() => {
+              setEditingTask(row);
+              setEditForm({
+                taskName: row.taskName || '',
+                projectId: row.projectId?._id || row.projectId || '',
+                assignedEmployee: row.assignedEmployee?._id || row.assignedEmployee || '',
+                priority: row.priority || 'Medium',
+                status: row.status || 'To Do',
+                dueDate: row.dueDate ? new Date(row.dueDate).toISOString().split('T')[0] : '',
+                estimatedHours: row.estimatedHours || 8,
+                description: row.description || ''
+              });
+            }}
+            className="p-1.5 text-text-muted hover:text-primary hover:bg-primary/10 rounded transition-colors"
+            title="Edit task"
+          >
+            <Edit className="h-4 w-4" />
+          </button>
+          <button 
+            onClick={() => {
+              if (window.confirm('Delete this task?')) {
+                deleteTaskMutation.mutate(row._id);
+              }
+            }}
+            className="p-1.5 text-text-muted hover:text-danger hover:bg-danger/10 rounded transition-colors"
+            title="Delete task"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       )
     }
   ];
@@ -407,6 +453,148 @@ export default function Tasks() {
               <div className="flex justify-end space-x-3 pt-3 border-t border-border">
                 <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
                 <Button type="submit" isLoading={createTaskMutation.isPending}>Save Task</Button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT TASK MODAL */}
+      {editingTask && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-lg shadow-2xl my-6 animate-in fade-in zoom-in duration-150">
+            <div className="flex justify-between items-center pb-3 border-b border-border">
+              <h2 className="text-base font-bold text-text flex items-center">
+                <Edit className="mr-1.5 h-5 w-5 text-primary" /> Edit Task: {editingTask.taskId || editingTask.taskName}
+              </h2>
+              <button onClick={() => setEditingTask(null)} className="text-text-muted hover:text-text">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form 
+              onSubmit={(e) => { 
+                e.preventDefault(); 
+                updateTaskMutation.mutate({
+                  id: editingTask._id,
+                  payload: {
+                    ...editForm,
+                    projectId: editForm.projectId || undefined,
+                    assignedEmployee: editForm.assignedEmployee || undefined,
+                    estimatedHours: Number(editForm.estimatedHours) || 8
+                  }
+                });
+              }} 
+              className="space-y-4 text-xs mt-4"
+            >
+              <div>
+                <label className="font-semibold text-text block mb-1">Task Title / Deliverable *</label>
+                <input 
+                  type="text" 
+                  required
+                  value={editForm.taskName}
+                  onChange={(e) => setEditForm({ ...editForm, taskName: e.target.value })}
+                  className="w-full bg-background border border-border rounded p-2 text-text font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-semibold text-text block mb-1">Linked Project</label>
+                  <select 
+                    value={editForm.projectId}
+                    onChange={(e) => setEditForm({ ...editForm, projectId: e.target.value })}
+                    className="w-full bg-background border border-border rounded p-2 text-text font-medium"
+                  >
+                    <option value="">General (No Project)</option>
+                    {projects.map((p) => (
+                      <option key={p._id} value={p._id}>{p.projectName}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-text block mb-1">Assigned Employee</label>
+                  <select 
+                    value={editForm.assignedEmployee}
+                    onChange={(e) => setEditForm({ ...editForm, assignedEmployee: e.target.value })}
+                    className="w-full bg-background border border-border rounded p-2 text-text font-medium"
+                  >
+                    <option value="">Unassigned</option>
+                    {users.map((u) => (
+                      <option key={u._id} value={u._id}>{u.name || u.email}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="font-semibold text-text block mb-1">Priority</label>
+                  <select 
+                    value={editForm.priority}
+                    onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
+                    className="w-full bg-background border border-border rounded p-2 text-text"
+                  >
+                    <option value="Low">Low</option>
+                    <option value="Medium">Medium</option>
+                    <option value="High">High</option>
+                    <option value="Urgent">Urgent</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="font-semibold text-text block mb-1">Due Date</label>
+                  <input 
+                    type="date" 
+                    value={editForm.dueDate}
+                    onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                    className="w-full bg-background border border-border rounded p-2 text-text"
+                  />
+                </div>
+
+                <div>
+                  <label className="font-semibold text-text block mb-1">Est. Hours</label>
+                  <input 
+                    type="number" 
+                    min="1"
+                    value={editForm.estimatedHours}
+                    onChange={(e) => setEditForm({ ...editForm, estimatedHours: Number(e.target.value) })}
+                    className="w-full bg-background border border-border rounded p-2 text-text"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="font-semibold text-text block mb-1">Status</label>
+                <select 
+                  value={editForm.status}
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                  className="w-full bg-background border border-border rounded p-2 text-text font-semibold"
+                >
+                  <option value="To Do">To Do</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Review">Review</option>
+                  <option value="QA">QA</option>
+                  <option value="Completed">Completed</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-semibold text-text block mb-1">Task Description</label>
+                <textarea 
+                  rows={3}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  className="w-full bg-background border border-border rounded p-2 text-text resize-none"
+                  placeholder="Specific technical criteria or acceptance guidelines..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-3 border-t border-border">
+                <Button type="button" variant="outline" onClick={() => setEditingTask(null)}>Cancel</Button>
+                <Button type="submit" isLoading={updateTaskMutation.isPending}>Update Task</Button>
               </div>
 
             </form>

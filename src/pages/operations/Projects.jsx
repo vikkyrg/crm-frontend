@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, FolderKanban, Eye } from 'lucide-react';
+import { Plus, FolderKanban, Eye, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import DataTable from '../../components/tables/DataTable';
+import { DropdownMenu, DropdownItem } from '../../components/ui/DropdownMenu';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { TableSkeleton } from '../../components/feedback/LoadingSkeleton';
@@ -12,12 +13,16 @@ import { toast } from 'sonner';
 export default function Projects() {
   const queryClient = useQueryClient();
   const [showAddModal, setShowAddModal] = useState(false);
-  const [formData, setFormData] = useState({
+  const [editingProject, setEditingProject] = useState(null);
+
+  const initialForm = {
     projectName: '',
     clientId: '',
     budget: 150000,
     status: 'Planning'
-  });
+  };
+
+  const [formData, setFormData] = useState(initialForm);
 
   const { data: clientsData } = useQuery({
     queryKey: ['clients'],
@@ -40,11 +45,70 @@ export default function Projects() {
     onSuccess: () => {
       toast.success('Project created with 7 automatic milestones!');
       setShowAddModal(false);
-      setFormData({ projectName: '', clientId: '', budget: 150000, status: 'Planning' });
+      setFormData(initialForm);
       queryClient.invalidateQueries(['projects']);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to create project')
   });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, payload }) => api.put(`/projects/${id}`, payload),
+    onSuccess: () => {
+      toast.success('Project updated successfully!');
+      setShowAddModal(false);
+      setEditingProject(null);
+      setFormData(initialForm);
+      queryClient.invalidateQueries(['projects']);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to update project')
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id) => api.delete(`/projects/${id}`),
+    onSuccess: () => {
+      toast.success('Project deleted successfully!');
+      queryClient.invalidateQueries(['projects']);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete project')
+  });
+
+  const openCreateModal = () => {
+    setEditingProject(null);
+    setFormData(initialForm);
+    setShowAddModal(true);
+  };
+
+  const openEditModal = (project) => {
+    setEditingProject(project);
+    setFormData({
+      projectName: project.projectName || '',
+      clientId: project.clientId?._id || project.clientId || '',
+      budget: project.budget || 0,
+      status: project.status || 'Active'
+    });
+    setShowAddModal(true);
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.projectName.trim()) {
+      toast.error('Project Name is required');
+      return;
+    }
+    if (!formData.clientId) {
+      toast.error('Client selection is required');
+      return;
+    }
+    const payload = {
+      ...formData,
+      budget: Number(formData.budget) || 0
+    };
+    if (editingProject) {
+      updateMutation.mutate({ id: editingProject._id, payload });
+    } else {
+      createMutation.mutate(payload);
+    }
+  };
 
   const displayData = data?.data || data || [];
   const clientList = clientsData?.data || clientsData || [];
@@ -71,14 +135,32 @@ export default function Projects() {
       )
     },
     {
-      header: 'Project 360',
+      header: 'Actions',
       cell: (row) => (
-        <Link 
-          to={`/projects/${row._id}`} 
-          className="flex items-center px-3 py-1 bg-primary text-white text-xs font-bold rounded hover:bg-primary/90 transition-colors"
-        >
-          <Eye className="mr-1 h-3.5 w-3.5" /> 360 View
-        </Link>
+        <div className="flex items-center space-x-2">
+          <Link 
+            to={`/projects/${row._id}`} 
+            className="flex items-center px-2.5 py-1 bg-primary text-white text-xs font-bold rounded hover:bg-primary/90 transition-colors shadow-sm"
+          >
+            <Eye className="mr-1 h-3.5 w-3.5" /> 360 View
+          </Link>
+          <DropdownMenu>
+            <DropdownItem icon={Edit} onClick={() => openEditModal(row)}>
+              Edit Project
+            </DropdownItem>
+            <DropdownItem 
+              icon={Trash2} 
+              danger 
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to delete project "${row.projectName}"? Associated milestones and tasks will remain archived.`)) {
+                  deleteMutation.mutate(row._id);
+                }
+              }}
+            >
+              Delete Project
+            </DropdownItem>
+          </DropdownMenu>
+        </div>
       )
     }
   ];
@@ -92,7 +174,7 @@ export default function Projects() {
           </h1>
           <p className="text-sm text-text-muted mt-1">Manage software development projects, milestones, tasks, and profitability.</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)}>
+        <Button onClick={openCreateModal}>
           <Plus className="mr-2 h-4 w-4" /> Add Project
         </Button>
       </div>
@@ -103,16 +185,18 @@ export default function Projects() {
         <ErrorState title="No projects found" message="There are currently no project records in the database." />
       )}
       {!isLoading && !isError && displayData.length > 0 && (
-        <DataTable columns={columns} data={displayData} />
+        <DataTable columns={columns} data={displayData} reportName="Projects_Export" />
       )}
 
-      {/* CREATE PROJECT MODAL */}
+      {/* CREATE & EDIT PROJECT MODAL */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-surface border border-border rounded-xl p-6 w-full max-w-lg shadow-2xl">
-            <h2 className="text-lg font-bold text-text mb-4">Create New Project</h2>
+            <h2 className="text-lg font-bold text-text mb-4">
+              {editingProject ? `Edit Project: ${editingProject.projectId || editingProject.projectName}` : 'Create New Project'}
+            </h2>
             
-            <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(formData); }} className="space-y-4 text-xs">
+            <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
               <div>
                 <label className="font-semibold text-text block mb-1">Project Name *</label>
                 <input 
@@ -162,13 +246,19 @@ export default function Projects() {
                     <option value="Active">Active</option>
                     <option value="Testing">Testing</option>
                     <option value="On Hold">On Hold</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
                   </select>
                 </div>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4 border-t border-border">
-                <Button type="button" variant="outline" onClick={() => setShowAddModal(false)}>Cancel</Button>
-                <Button type="submit" isLoading={createMutation.isPending}>Save Project</Button>
+                <Button type="button" variant="outline" onClick={() => { setShowAddModal(false); setEditingProject(null); }}>
+                  Cancel
+                </Button>
+                <Button type="submit" isLoading={createMutation.isPending || updateMutation.isPending}>
+                  {editingProject ? 'Update Project' : 'Save Project'}
+                </Button>
               </div>
             </form>
           </div>

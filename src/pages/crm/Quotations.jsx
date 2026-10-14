@@ -29,19 +29,21 @@ export default function Quotations() {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
+  const [editingQuotation, setEditingQuotation] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
   // Form State with Multi-Line Items
   const defaultItem = { item: '', description: '', quantity: 1, rate: 0, taxPercent: 18, discount: 0 };
-  const [formData, setFormData] = useState({
+  const initialQuotationForm = {
     title: '',
     clientId: '',
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     items: [{ ...defaultItem, item: 'Web Development / IT Consulting', rate: 50000 }],
     notes: 'Payment Terms: 50% Advance upon agreement, 50% upon final UAT & deployment. Taxes as applicable.'
-  });
+  };
+  const [formData, setFormData] = useState(initialQuotationForm);
 
   const { data: quotationsData, isLoading, isError, refetch } = useQuery({
     queryKey: ['quotations'],
@@ -78,15 +80,22 @@ export default function Quotations() {
       toast.success('Quotation created successfully!');
       queryClient.invalidateQueries(['quotations']);
       setIsCreateModalOpen(false);
-      setFormData({
-        title: '',
-        clientId: '',
-        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        items: [{ ...defaultItem, item: 'Web Development / IT Consulting', rate: 50000 }],
-        notes: 'Payment Terms: 50% Advance upon agreement, 50% upon final UAT & deployment.'
-      });
+      setFormData(initialQuotationForm);
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to create quotation')
+  });
+
+  // Update Mutation
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, payload }) => api.put(`/quotations/${id}`, payload),
+    onSuccess: () => {
+      toast.success('Quotation updated successfully!');
+      queryClient.invalidateQueries(['quotations']);
+      setIsCreateModalOpen(false);
+      setEditingQuotation(null);
+      setFormData(initialQuotationForm);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to update quotation')
   });
 
   // Submit Approval Mutation
@@ -133,6 +142,24 @@ export default function Quotations() {
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete quotation')
   });
 
+  const openCreateModal = () => {
+    setEditingQuotation(null);
+    setFormData(initialQuotationForm);
+    setIsCreateModalOpen(true);
+  };
+
+  const openEditModal = (quotation) => {
+    setEditingQuotation(quotation);
+    setFormData({
+      title: quotation.title || '',
+      clientId: quotation.clientId?._id || quotation.clientId || '',
+      validUntil: quotation.validUntil ? new Date(quotation.validUntil).toISOString().split('T')[0] : '',
+      items: (quotation.items && quotation.items.length > 0) ? quotation.items : [{ ...defaultItem }],
+      notes: quotation.notes || ''
+    });
+    setIsCreateModalOpen(true);
+  };
+
   // Item Management in Form
   const addItemRow = () => {
     setFormData({
@@ -175,7 +202,11 @@ export default function Quotations() {
       toast.error('Please select a Client for this quotation');
       return;
     }
-    createMutation.mutate(formData);
+    if (editingQuotation) {
+      updateMutation.mutate({ id: editingQuotation._id, payload: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
   };
 
   // Filtered List
@@ -247,6 +278,13 @@ export default function Quotations() {
           </Button>
 
           <DropdownMenu>
+            <DropdownItem 
+              icon={Edit} 
+              onClick={() => openEditModal(row)}
+            >
+              Edit Quotation
+            </DropdownItem>
+
             {row.approvalStatus !== 'Approved' && row.approvalStatus !== 'Pending Approval' && (
               <DropdownItem 
                 icon={Send} 
@@ -300,7 +338,7 @@ export default function Quotations() {
             Build proposals with multi-item costing, GST calculations, approval lifecycles, and 1-click invoice/project conversion.
           </p>
         </div>
-        <Button onClick={() => setIsCreateModalOpen(true)}>
+        <Button onClick={openCreateModal}>
           <Plus className="mr-2 h-4 w-4" /> Create Quotation
         </Button>
       </div>
@@ -344,15 +382,16 @@ export default function Quotations() {
         <DataTable columns={columnsWithActions} data={filteredQuotations} />
       )}
 
-      {/* CREATE QUOTATION MODAL */}
+      {/* CREATE / EDIT QUOTATION MODAL */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="bg-surface border border-border rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden my-6 animate-in fade-in zoom-in duration-150">
             <div className="p-4 border-b border-border flex justify-between items-center bg-background/50">
               <h2 className="text-base font-bold text-text flex items-center">
-                <FileText className="mr-2 h-5 w-5 text-primary" /> Create New Commercial Quotation
+                <FileText className="mr-2 h-5 w-5 text-primary" /> 
+                {editingQuotation ? `Edit Quotation: ${editingQuotation.quotationNumber || editingQuotation.title}` : 'Create New Commercial Quotation'}
               </h2>
-              <button onClick={() => setIsCreateModalOpen(false)} className="text-text-muted hover:text-text">
+              <button onClick={() => { setIsCreateModalOpen(false); setEditingQuotation(null); }} className="text-text-muted hover:text-text">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -524,11 +563,11 @@ export default function Quotations() {
               </div>
 
               <div className="flex justify-end space-x-3 pt-3 border-t border-border">
-                <Button type="button" variant="outline" onClick={() => setIsCreateModalOpen(false)}>
+                <Button type="button" variant="outline" onClick={() => { setIsCreateModalOpen(false); setEditingQuotation(null); }}>
                   Cancel
                 </Button>
-                <Button type="submit" isLoading={createMutation.isPending}>
-                  Create Quotation
+                <Button type="submit" isLoading={createMutation.isPending || updateMutation.isPending}>
+                  {editingQuotation ? 'Update Quotation' : 'Create Quotation'}
                 </Button>
               </div>
 

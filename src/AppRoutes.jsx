@@ -6,7 +6,7 @@ import Clients from './pages/crm/Clients';
 import Quotations from './pages/crm/Quotations';
 import Projects from './pages/operations/Projects';
 import Tasks from './pages/operations/Tasks';
-import Websites from './pages/assets/Websites';
+import Websites from './pages/digital-assets/Websites';
 import Domains from './pages/assets/Domains';
 import Tickets from './pages/support/Tickets';
 import Invoices from './pages/finance/Invoices';

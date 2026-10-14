@@ -12,11 +12,14 @@ import {
   Calendar,
   Building,
   FolderKanban,
-  Mail
+  Mail,
+  MoreVertical,
+  Ban
 } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import DataTable from '../../components/tables/DataTable';
+import { DropdownMenu, DropdownItem } from '../../components/ui/DropdownMenu';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { TableSkeleton } from '../../components/feedback/LoadingSkeleton';
@@ -130,6 +133,26 @@ export default function Invoices() {
       toast.success(res.data?.message || 'Invoice email processed');
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to dispatch invoice email')
+  });
+
+  const cancelInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId) => api.put(`/invoices/${invoiceId}`, { status: 'Cancelled' }),
+    onSuccess: () => {
+      toast.success('Invoice marked as Cancelled');
+      queryClient.invalidateQueries(['invoices']);
+      queryClient.invalidateQueries(['managementMetrics']);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to cancel invoice')
+  });
+
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: async (invoiceId) => api.delete(`/invoices/${invoiceId}`),
+    onSuccess: () => {
+      toast.success('Invoice deleted successfully');
+      queryClient.invalidateQueries(['invoices']);
+      queryClient.invalidateQueries(['managementMetrics']);
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete invoice')
   });
 
   // Line item helpers
@@ -252,6 +275,48 @@ export default function Invoices() {
               ✓ Fully Paid
             </span>
           )}
+
+          <DropdownMenu>
+            <DropdownItem
+              icon={Printer}
+              onClick={() => {
+                window.open(`http://localhost:5000/api/v1/invoices/${row._id}/print`, '_blank');
+              }}
+            >
+              Print Invoice
+            </DropdownItem>
+            <DropdownItem
+              icon={Mail}
+              onClick={() => emailInvoiceMutation.mutate(row._id)}
+            >
+              Send Email
+            </DropdownItem>
+            {row.status !== 'Cancelled' && (row.amountPaid || 0) === 0 && (
+              <DropdownItem
+                icon={Ban}
+                onClick={() => {
+                  if (window.confirm(`Mark invoice ${row.invoiceNumber} as Cancelled?`)) {
+                    cancelInvoiceMutation.mutate(row._id);
+                  }
+                }}
+              >
+                Cancel Invoice
+              </DropdownItem>
+            )}
+            {(row.amountPaid || 0) === 0 && (
+              <DropdownItem
+                icon={Trash2}
+                danger
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete invoice ${row.invoiceNumber}? This action cannot be undone.`)) {
+                    deleteInvoiceMutation.mutate(row._id);
+                  }
+                }}
+              >
+                Delete Invoice
+              </DropdownItem>
+            )}
+          </DropdownMenu>
         </div>
       )
     }

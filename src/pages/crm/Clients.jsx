@@ -120,12 +120,27 @@ export default function Clients() {
 
   // Delete Mutation
   const deleteClientMutation = useMutation({
-    mutationFn: async (id) => api.delete(`/clients/${id}`),
-    onSuccess: () => {
-      toast.success('Client archived successfully!');
+    mutationFn: async (id) => api.delete(`/clients/${id}?permanent=true`),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Client and all linked records removed across all pages successfully!');
+      // Invalidate all affected collections in frontend cache
       queryClient.invalidateQueries(['clients']);
+      queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['invoices']);
+      queryClient.invalidateQueries(['payments']);
+      queryClient.invalidateQueries(['quotations']);
+      queryClient.invalidateQueries(['contracts']);
+      queryClient.invalidateQueries(['amc']);
+      queryClient.invalidateQueries(['websites']);
+      queryClient.invalidateQueries(['domains']);
+      queryClient.invalidateQueries(['tickets']);
+      queryClient.invalidateQueries(['expenses']);
+      queryClient.invalidateQueries(['documents']);
+      queryClient.invalidateQueries(['managementMetrics']);
+      queryClient.invalidateQueries(['ceoView']);
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to archive client')
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete client')
   });
 
   // Validation function
@@ -301,12 +316,12 @@ export default function Clients() {
               icon={Trash2} 
               danger 
               onClick={() => {
-                if (window.confirm(`Are you sure you want to archive client "${row.companyName}"? Historical records will remain preserved.`)) {
+                if (window.confirm(`Warning: Are you sure you want to completely delete client "${row.companyName}"?\n\nThis will permanently delete this client and all associated projects, tasks, invoices, payments, contracts, quotations, assets, tickets, and documents across all pages.`)) {
                   deleteClientMutation.mutate(row._id);
                 }
               }}
             >
-              Archive Client
+              Delete Client (All Data)
             </DropdownItem>
           </DropdownMenu>
         </div>

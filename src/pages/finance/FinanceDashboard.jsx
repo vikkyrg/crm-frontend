@@ -72,6 +72,8 @@ export default function FinanceDashboard() {
 
   const totalInvoiced = finance.revenue || 0;
   const totalCollected = finance.collected || 0;
+  const collectedToday = finance.collectedToday || 0;
+  const collectedThisMonth = finance.collectedThisMonth || 0;
   const totalReceivables = finance.outstanding || 0;
   const totalExpensesCost = finance.expenses || 0;
   const netProfit = finance.profit || (totalCollected - totalExpensesCost);
@@ -89,7 +91,7 @@ export default function FinanceDashboard() {
       value: `₹${totalCollected.toLocaleString()}`, 
       icon: TrendingUp, 
       color: "text-success",
-      sub: `${payments.length} Payments Received`
+      sub: `Today: ₹${collectedToday.toLocaleString()} | Month: ₹${collectedThisMonth.toLocaleString()}`
     },
     { 
       title: "Accounts Receivable", 

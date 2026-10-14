@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
@@ -29,7 +29,8 @@ import {
   Edit,
   Plus,
   X,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 
 export default function Client360() {
@@ -119,6 +120,31 @@ export default function Client360() {
     }
   });
 
+  const navigate = useNavigate();
+
+  // Delete Client Mutation
+  const deleteClientMutation = useMutation({
+    mutationFn: async () => api.delete(`/clients/${id}?permanent=true`),
+    onSuccess: (res) => {
+      toast.success(res?.message || 'Client and all linked data deleted successfully!');
+      queryClient.invalidateQueries(['clients']);
+      queryClient.invalidateQueries(['projects']);
+      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['invoices']);
+      queryClient.invalidateQueries(['payments']);
+      queryClient.invalidateQueries(['quotations']);
+      queryClient.invalidateQueries(['contracts']);
+      queryClient.invalidateQueries(['amc']);
+      queryClient.invalidateQueries(['websites']);
+      queryClient.invalidateQueries(['domains']);
+      queryClient.invalidateQueries(['tickets']);
+      queryClient.invalidateQueries(['expenses']);
+      queryClient.invalidateQueries(['documents']);
+      navigate('/clients');
+    },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete client')
+  });
+
   if (isLoading) return <div className="p-6"><TableSkeleton /></div>;
   if (isError) return <div className="p-6"><ErrorState title="Failed to load Client 360 View" onRetry={refetch} /></div>;
 
@@ -194,6 +220,19 @@ export default function Client360() {
             </span>
             <Button variant="outline" size="sm" onClick={() => setShowEditModal(true)}>
               <Edit className="mr-1.5 h-3.5 w-3.5" /> Edit Client
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-danger hover:bg-danger/10 border-danger/30 hover:border-danger"
+              disabled={deleteClientMutation.isPending}
+              onClick={() => {
+                if (window.confirm(`Warning: Are you sure you want to completely delete client "${client.companyName}"?\n\nThis will permanently remove this client along with all their linked projects, tasks, invoices, payments, contracts, quotations, assets, tickets, and documents across all pages.`)) {
+                  deleteClientMutation.mutate();
+                }
+              }}
+            >
+              <Trash2 className="mr-1.5 h-3.5 w-3.5 text-danger" /> Delete Client
             </Button>
           </div>
         </div>
@@ -481,7 +520,9 @@ export default function Client360() {
               {payments.length === 0 ? <p className="text-xs text-text-muted py-4 text-center">No recorded payments.</p> : (
                 <DataTable 
                   columns={[
-                    { header: 'Payment ID', accessor: 'paymentId' },
+                    { header: 'Payment / Receipt #', cell: (row) => row.receiptNumber || row.paymentId },
+                    { header: 'Type', cell: (row) => row.invoiceId ? 'Invoice Payment' : (row.paymentType || 'Advance') },
+                    { header: 'Invoice #', cell: (row) => row.invoiceId?.invoiceNumber ? `#${row.invoiceId.invoiceNumber}` : 'Advance / Retainer' },
                     { header: 'Amount', cell: (row) => `₹${(row.amount || 0).toLocaleString()}` },
                     { header: 'Method', accessor: 'paymentMethod' },
                     { header: 'Transaction Ref', accessor: 'transactionReference' },

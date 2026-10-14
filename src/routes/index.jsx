@@ -21,7 +21,7 @@ import Quotations from '../pages/crm/Quotations';
 import Projects from '../pages/operations/Projects';
 import ProjectDetail from '../pages/operations/Project360';
 import Tasks from '../pages/operations/Tasks';
-import Websites from '../pages/assets/Websites';
+import Websites from '../pages/digital-assets/Websites';
 import Domains from '../pages/assets/Domains';
 import FinanceDashboard from '../pages/finance/FinanceDashboard';
 import Invoices from '../pages/finance/Invoices';

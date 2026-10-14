@@ -27,6 +27,7 @@ export default function Websites() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingWebsite, setEditingWebsite] = useState(null);
+  const [errors, setErrors] = useState({});
 
   // Form State
   const initialFormState = {
@@ -42,7 +43,8 @@ export default function Websites() {
     backupStatus: 'Weekly',
     repositoryUrl: '',
     deploymentDate: new Date().toISOString().split('T')[0],
-    renewalDate: ''
+    renewalDate: '',
+    notes: ''
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -86,17 +88,25 @@ export default function Websites() {
     ? projects.filter(p => (p.clientId?._id || p.clientId) === formData.clientId)
     : projects;
 
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingWebsite(null);
+    setFormData(initialFormState);
+    setErrors({});
+  };
+
   // Create Mutation
   const createMutation = useMutation({
     mutationFn: async (payload) => api.post('/websites', payload),
     onSuccess: () => {
       toast.success('Website asset added successfully!');
-      setShowAddModal(false);
-      setFormData(initialFormState);
+      handleCloseModal();
       queryClient.invalidateQueries(['websites']);
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message || 'Failed to add website');
+      const msg = err.response?.data?.message || 'Failed to add website';
+      toast.error(msg);
+      setErrors((prev) => ({ ...prev, api: msg }));
     }
   });
 
@@ -105,13 +115,13 @@ export default function Websites() {
     mutationFn: async ({ id, payload }) => api.put(`/websites/${id}`, payload),
     onSuccess: () => {
       toast.success('Website updated successfully!');
-      setEditingWebsite(null);
-      setShowAddModal(false);
-      setFormData(initialFormState);
+      handleCloseModal();
       queryClient.invalidateQueries(['websites']);
     },
     onError: (err) => {
-      toast.error(err.response?.data?.message || 'Failed to update website');
+      const msg = err.response?.data?.message || 'Failed to update website';
+      toast.error(msg);
+      setErrors((prev) => ({ ...prev, api: msg }));
     }
   });
 
@@ -127,14 +137,27 @@ export default function Websites() {
     }
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const validateForm = () => {
+    const newErrors = {};
     if (!formData.clientId) {
-      toast.error('Please select an associated Client');
-      return;
+      newErrors.clientId = 'Client selection is required';
     }
     if (!formData.domainName || !formData.domainName.trim()) {
-      toast.error('Please enter a Website URL / Domain Name');
+      newErrors.domainName = 'Website URL / Domain is required';
+    } else {
+      // Validate domain/URL format (allows http(s)://..., or domain.com, sub.domain.com with path/port)
+      const domainOrUrlRegex = /^(https?:\/\/)?(([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}|localhost|(\d{1,3}\.){3}\d{1,3})(:\d+)?(\/.*)?$/;
+      if (!domainOrUrlRegex.test(formData.domainName.trim())) {
+        newErrors.domainName = 'Please enter a valid domain or URL (e.g. example.com or https://example.com)';
+      }
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!validateForm()) {
       return;
     }
 
@@ -154,6 +177,7 @@ export default function Websites() {
 
   const handleEdit = (row) => {
     setEditingWebsite(row);
+    setErrors({});
     setFormData({
       clientId: row.clientId?._id || row.clientId || '',
       projectId: row.projectId?._id || row.projectId || '',
@@ -167,7 +191,8 @@ export default function Websites() {
       backupStatus: row.backupStatus || 'Weekly',
       repositoryUrl: row.repositoryUrl || '',
       deploymentDate: row.deploymentDate ? new Date(row.deploymentDate).toISOString().split('T')[0] : '',
-      renewalDate: row.renewalDate ? new Date(row.renewalDate).toISOString().split('T')[0] : ''
+      renewalDate: row.renewalDate ? new Date(row.renewalDate).toISOString().split('T')[0] : '',
+      notes: row.notes || ''
     });
     setShowAddModal(true);
   };
@@ -201,7 +226,7 @@ export default function Websites() {
     },
     { 
       header: 'Client', 
-      cell: (row) => row.clientId?.companyName || 'Unassigned' 
+      cell: (row) => row.clientId?.companyName || row.clientId?.name || 'Unassigned' 
     },
     { 
       header: 'Project', 
@@ -247,6 +272,15 @@ export default function Websites() {
           'bg-warning/20 text-warning'
         }`}>
           {row.status}
+        </span>
+      )
+    },
+    {
+      header: 'Created At',
+      accessor: 'createdAt',
+      cell: (row) => (
+        <span className="text-xs text-text-muted">
+          {row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
         </span>
       )
     },
@@ -359,7 +393,8 @@ export default function Websites() {
                 {editingWebsite ? 'Edit Website Asset' : 'Add New Website Asset'}
               </h2>
               <button 
-                onClick={() => setShowAddModal(false)}
+                type="button"
+                onClick={handleCloseModal}
                 className="text-text-muted hover:text-text p-1 rounded"
               >
                 <X className="h-5 w-5" />
@@ -367,6 +402,12 @@ export default function Websites() {
             </div>
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
+              {errors.api && (
+                <div className="p-3 bg-danger/10 border border-danger/30 text-danger rounded-md text-xs">
+                  {errors.api}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
                 {/* Client Selection */}
@@ -376,17 +417,24 @@ export default function Websites() {
                   </label>
                   <select 
                     value={formData.clientId}
-                    onChange={(e) => setFormData({ ...formData, clientId: e.target.value, projectId: '' })}
-                    className="w-full h-10 px-3 rounded-md border border-border bg-surface text-text text-xs focus:ring-2 focus:ring-primary outline-hidden"
-                    required
+                    onChange={(e) => {
+                      setFormData({ ...formData, clientId: e.target.value, projectId: '' });
+                      if (errors.clientId) setErrors(prev => ({ ...prev, clientId: null }));
+                    }}
+                    className={`w-full h-10 px-3 rounded-md border ${
+                      errors.clientId ? 'border-danger' : 'border-border'
+                    } bg-surface text-text text-xs focus:ring-2 focus:ring-primary outline-hidden`}
                   >
                     <option value="">-- Select Client Organization --</option>
                     {clients.map(c => (
                       <option key={c._id} value={c._id}>
-                        {c.companyName} {c.contactPerson ? `(${c.contactPerson})` : ''}
+                        {c.companyName || c.name || 'Unnamed Client'} {c.contactPerson ? `(${c.contactPerson})` : ''}
                       </option>
                     ))}
                   </select>
+                  {errors.clientId && (
+                    <p className="text-danger text-[11px] mt-1">{errors.clientId}</p>
+                  )}
                 </div>
 
                 {/* Project Selection */}
@@ -412,11 +460,17 @@ export default function Websites() {
                     Website URL / Domain Name <span className="text-danger">*</span>
                   </label>
                   <Input 
-                    placeholder="e.g. clientportal.innomatrics.com"
+                    placeholder="e.g. clientportal.innomatrics.com or https://example.com"
                     value={formData.domainName}
-                    onChange={(e) => setFormData({ ...formData, domainName: e.target.value })}
-                    required
+                    onChange={(e) => {
+                      setFormData({ ...formData, domainName: e.target.value });
+                      if (errors.domainName) setErrors(prev => ({ ...prev, domainName: null }));
+                    }}
+                    className={errors.domainName ? 'border-danger' : ''}
                   />
+                  {errors.domainName && (
+                    <p className="text-danger text-[11px] mt-1">{errors.domainName}</p>
+                  )}
                 </div>
 
                 {/* Website Type */}
@@ -530,12 +584,24 @@ export default function Websites() {
 
               </div>
 
+              {/* Notes */}
+              <div>
+                <label className="font-semibold text-text block mb-1">Notes & Configuration Details</label>
+                <textarea 
+                  rows={3}
+                  placeholder="Additional notes, DNS details, server environment notes, etc."
+                  value={formData.notes || ''}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full p-2.5 rounded-md border border-border bg-surface text-text text-xs focus:ring-2 focus:ring-primary outline-hidden resize-none"
+                />
+              </div>
+
               {/* Form Buttons */}
               <div className="flex justify-end space-x-3 pt-4 border-t border-border">
                 <Button 
                   type="button" 
                   variant="outline" 
-                  onClick={() => setShowAddModal(false)}
+                  onClick={handleCloseModal}
                 >
                   Cancel
                 </Button>
